@@ -1,0 +1,50 @@
+# -*- python -*-
+
+import os
+opts = Options ()
+opts.Add (BoolOption ('debug', 'Set to 1 to build with debugging symbols', 0))
+opts.Add (BoolOption ('profile', 'Set to 1 to build with profiling support', 0))
+opts.Add (BoolOption ('memwatch', 'Set to 1 to build with the MemWatch library linked in', 0))
+
+env = Environment (options = opts,
+                   CCFLAGS = '-Wall',
+                   LINKFLAGS = '-mwindows',
+                   PLATFORM = 'cygwin',
+                   CPPPATH = ['d:/usr/local/include'],
+                   ENV = os.environ,
+                   CPPDEFINES = {'_WIN32_WINNT': 0x0501,
+                                 '_WIN32_IE': 0x0000,
+                                 'WIN32_LEAN_AND_MEAN': 1,
+                                 'DEBUG': '${int (debug)}',
+                                 'MEMWATCH': '${int (memwatch)}',
+                                 'MEMWATCH_STDIO': '${int (memwatch)}'},
+                   LIBS = [],
+                   LIBPATH = [],
+                   )
+
+build_with_debug = ARGUMENTS.get ('debug', 0)
+build_with_profile = ARGUMENTS.get ('profile', 0)
+
+if int (build_with_debug):
+    env.Replace (CCFLAGS = env['CCFLAGS'] + ' -g')
+    env.Replace (LINKFLAGS = env['LINKFLAGS'] + ' -g')
+
+if int (build_with_profile):
+    env.Replace (CCFLAGS = env['CCFLAGS'] + ' -pg')
+    env.Replace (LINKFLAGS = env['LINKFLAGS'] + ' -pg')
+    env.Replace (LIBS = env['LIBS'] + ['gmon'])
+
+build_with_memwatch = ARGUMENTS.get ('memwatch', 0)
+if int (build_with_memwatch):
+    env.Replace (LIBS = env['LIBS'] + ['memwatch'])
+    env.Replace (LIBPATH = env['LIBPATH'] + ['d:/usr/local/lib',])
+
+if not (int (build_with_debug) or int (build_with_profile)):
+    env.Replace (CCFLAGS = env['CCFLAGS'] + ' -O3')
+
+env.Program ('siaynoq',
+             ['main.c', 'siaynoq.c', 'hotkeys.c', 'tiling.c', 'tools.c'],
+             LIBS = env['LIBS'] + ['wtsapi32', 'shell32'])
+env.SharedLibrary ('wafer',
+                   ['hooks.c', 'tools.c'],
+                   CCFLAGS = env['CCFLAGS'] + ' -DEXPORT_DLL')

@@ -1,0 +1,263 @@
+2007-05-13  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/hotkeys.c (put_focused_window_on_track): Tiling code no
+	longer in hooks DLL; adjusted as necessary.
+
+	* src/siaynoq.c (siaynoq_wnd_proc_statusbar): From src/hooks.c,
+	moved handling of events here.  Now, siaynoq_hook_shellproc()
+	merely sends a message to the main shell.
+	(siaynoq_wnd_proc_statusbar): Changed app focus handler so that it
+	doesn't automatically tile a window.  Now, it just tags the
+	focused app and sets a (configurable) timer.  When that timer
+	expires, the handle of the tracked window is compared with the
+	tagged one.  Only if they're not the same is the tagged window
+	tracked.
+
+2007-05-12  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/tiling.c (siaynoq_is_new_wnd_tileable): Renamed from
+	siaynoq_is_newly_created_target_wnd_tileable().
+
+	* src/siaynoq.c (siaynoq_wnd_proc_statusbar): Instead of using the
+	shared mem struct's copy of the main window's handle, use the
+	static one.
+
+	* src/hooks.c: Moved all tiling-related functions to tiling.{ch}.
+
+	* src/tools.h: Forgot the damn include guard, and didn't notice
+	until now.
+	(struct SIAYNOQSHAREDMEM): Removed pointer to main window's handle
+	since all documented uses are superfluous.
+
+	* src/main.c (WinMain): Add call to execute
+	siaynoq_run_startup_items() in a different thread.
+	(WinMain): Commented out call to siaynoq_run_startup_items() while
+	cleaning up.
+
+2007-05-11  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/hooks.c (siaynoq_set_wnd_handle_on_track): Return handle of
+	previously maximized window if target is the same as the current
+	one.
+
+2007-05-10  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/siaynoq.c (siaynoq_wnd_create_statusbar)
+	(siaynoq_resize_work_area): Factored code to resize work area from
+	siaynoq_wnd_create_statusbar() into its own function.
+	(siaynoq_wnd_proc_statusbar): When a session is unlocked or a
+	change in display resolution is detected, reset work area.
+
+2007-05-07  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/hooks.c (siaynoq_is_target_wnd_tileable): Remove silly check
+	for HMENU values.
+
+	* src/tools.c (reg_set_value): Added HKEY parameter; used in
+	RegCreateKeyEx().  If NULL, HKEY_CURRENT_USER is used instead.
+	(reg_get_value): Fixed signature to properly reflect parameters
+	handled by RegQueryValueEx().
+	(shared_mem_struct_init): Return NULL explicitly if file mapping
+	object seems to have already been initialized.
+
+2007-05-06  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/tools.c (reg_set_value): Added BOOL parameter; if true, then
+	registry is flushed before closing.
+
+	* src/siaynoq.c (siaynoq_wnd_proc_statusbar): Fixed a flaw in the
+	logic that determines which window's title ought to be queried for
+	display in the status bar.
+
+2007-05-05  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/hooks.c (siaynoq_is_newly_created_target_wnd_tileable):
+	Check whether given window handle can be maximized so it can be
+	considered tileable.  Stops windows such as those created by
+	Microsoft's installer from being tiled.
+	(siaynoq_hook_shellproc): Apparently, the window handle passed on
+	activation can be NULL; replaced assert with a conditional.  Was
+	noticed when launching Yuri's Revenge triggered the assertion.
+
+	* src/config.h (MAIN_MOD_KEY): Define as one of the VK_*
+	constants.  Used mainly in selecting which key to check the status
+	off when focus changes.
+
+	* src/SConstruct: Added support for boolean command-line options
+	to control the build.  Refined control over the libraries
+	included, depending mostly on the values of command-line options.
+
+	* src/hotkeys.c (load_hooks_dll, unload_hooks_dll): New hotkey
+	functions.  Available only if DEBUG was specified during
+	compilation.  Helps make modifying the hooks DLL a bit easier.
+	Added default bindings as well.
+	(put_focused_window_on_track): Check if hook DLL is loaded before
+	doing anything.
+
+	* src/siaynoq.c (siaynoq_init, siaynoq_free): Moved the code to
+	load/initialize and free/unload to separate helper functions
+	located in tools.c to enable better modularization.  Doesn't help
+	with the resource usage, though.
+	(siaynoq_wnd_proc_statusbar): Output paint-related debugging
+	messages only if _DEBUG is specified during compile.
+
+2007-05-03  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/tools.c (shared_mem_struct_init): Initialize instance only
+	if it isn't NULL.
+	(shared_mem_struct_free): Actually try and figure out if the API
+	calls succeeded.
+	(shared_mem_struct_init, shared_mem_struct_free): Modified to be
+	more general.
+	(shared_mem_struct_init): If file mapping already exists, close
+	file mapping handle and set it to NULL.  Retaining its value in
+	this case makes CloseHandle() fail, reporting the parameter value
+	as invalid.
+	(shared_mem_struct_free): Perform operations only if respective
+	parameters are not NULL.
+
+	* src/hooks.c (struct SIAYNOQSHAREDMEMHH): New struct.  Holds
+	handles for any hooks set through SetWindowsHookEx().
+	(DllMain): Moved initialization and freeing of general shared
+	memory struct to siaynoq_hooks_init() and siaynoq_hooks_free(),
+	respectively.
+	(DllMain): Made initialization of MemWatch routines called only on
+	process attach.
+	(siaynoq_hooks_init, siaynoq_hooks_free): Moved initialization and
+	free of general shared memory struct back to DllMain().  Having
+	those procedures outside said function failed in triggering the
+	tiling.
+	(siaynoq_hooks_init, siaynoq_hooks_free): Use modified shared mem
+	helper functions in initializing and freeing the hook DLL-only
+	shared mem struct.
+	(siaynoq_hook_shellproc): Added handler for window destructions.
+	Right now, this is literally the same block from r3; will probably
+	need to be trimmed down quite a bit.
+
+	* src/tools.h (struct SIAYNOQSHAREDMEM): Removed member for the
+	hook handle; what the fuck was I thinking, putting that in there?
+
+	* src/hotkeys.c: Removed references to the shared mem struct,
+	since there are no longer any functions that use it.
+
+	* src/siaynoq.c (siaynoq_wnd_proc_statusbar): Moved setting the
+	ProgramCount registry value from hotkeys.c.
+
+2007-05-02  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/hotkeys.c (siaynoq_hotkeys_init, siaynoq_hotkeys_free): Use
+	helper functions in initializing and freeing instance of shared
+	mem struct.
+
+	* src/hooks.c (DllMain): Use helper functions in initializing and
+	freeing instance of shared mem struct.
+
+	* src/tools.c (shared_mem_struct_init): If file mapping object has
+	already been created, return the value of the shared mem parameter
+	instead of just plain NULL.
+
+	* src/siaynoq.c (siaynoq_wnd_proc_statusbar): Changed
+	specification of coordinates for BitBlt() calls for the time/date
+	and window title display.  Also, fixed a bug in the length of the
+	bitmap for the window title (forgot to take the layout symbol's
+	length into consideration).
+	(siaynoq_init, siaynoq_free): Use helper functions in initializing
+	and freeing instance of shared mem struct.
+
+	* src/tools.h (struct SIAYNOQSHAREDMEM): Moved declaration of
+	shared mem struct, then added support functions for
+	initializing/freeing instances of said struct.
+
+2007-05-01  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/hotkeys.c (siaynoq_hotkeys_init): Call CreateFileMapping()
+	only if file mapping object is NULL.
+
+	* src/hooks.c (siaynoq_is_newly_created_target_wnd_tileable):
+	Forgot to free() a malloc()'d string.
+	(siaynoq_is_newly_created_target_wnd_tileable): Getting the module
+	filename should only have been done in DEBUG builds; bracketed the
+	block.
+
+	* src/siaynoq.c (siaynoq_wnd_proc_statusbar): Fixed GDI leaks;
+	didn't know that CreateSolidBrush() produced handles that needed
+	to be deleted.
+	(siaynoq_init): Call CreateFileMapping() only if file mapping
+	object is NULL.
+	(siaynoq_wnd_proc_statusbar): malloc()'d string for the active
+	window's title was only being freed if GetWindowText() returned a
+	non-zero value, causing memory to leak.
+
+2007-04-29  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/siaynoq.c (siaynoq_wnd_proc_statusbar): Reverted to the
+	previous revision as I thoroughly messed up the WM_PAINT handler
+	while trying to rewrite it to minimize flickering.
+	(siaynoq_wnd_regclass_statusbar): Use the values from config.h for
+	the background color during window creation.
+	(siaynoq_wnd_proc_statusbar): Reimplemented changes to prevent
+	flickering when redrawing the status bar.
+
+	* src/siaynoq.c (siaynoq_init): Updated reference to shared
+	library's name to reflect name change.
+	(siaynoq_wnd_proc_statusbar): Added code to draw time/date on
+	status bar with format specified in config.h.  Also, fixed a
+	little grammatical error in comments.
+	(siaynoq_wnd_proc_statusbar): Added handling of WM_TIMER, if
+	strftime() succeeds, to update time display as necessary.
+
+	* src/SConstruct: Changed name of target shared library to
+	`wafer.dll'; seems more appropriate.  Also added a cpp define for
+	WIN32_LEAN_AND_MEAN, just in case it can actually help.
+
+	* src/hooks.c (siaynoq_is_newly_created_target_wnd_tileable):
+	Added class name of the system notification area (systray) window
+	to the hardcoded exceptions to lessen lossage when running
+	alongside Explorer.
+	(siaynoq_hooks_init): Updated reference to shared library's name
+	to reflect name change.
+
+2007-04-28  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/hooks.c (siaynoq_hook_shellproc): Started experiment with
+	the WH_SHELL hook type.  Modified init and free functions to deal
+	with this hook instead of CBTProc.
+	(siaynoq_hooks_init siaynoq_hooks_free): Removed references to the
+	CBTProc function and hook pointer.
+	(siaynoq_hook_shellproc): Added a check to see if the Alt key is
+	held down while changing focus; if so, don't bother tiling.
+
+	* src/hooks.h (struct SIAYNOQSHAREDMEM): Added member for pointer
+	to the ShellProc hook.
+	(struct SIAYNOQSHAREDMEM): Removed references to the CBTProc hook
+	pointer.
+
+2007-04-27  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/siaynoq.c (siaynoq_init): Added a reference, and
+	initialization of said reference, to the shared memory
+	struct (needed mostly by the hotkey functions).
+	(siaynoq_wnd_proc_statusbar): Modified the way the title-drawing
+	routine gets the handle to its target window.  Works so far, but
+	since a proper implementation of the subdesktops concept from
+	larswm is yet to be devised, a lot is still to be seen.
+
+	* src/hooks.c (DllMain): Modified the initialization routine for
+	DLL's instance of the shared memory struct.
+	(siaynoq_hook_cbtproc): Moved the routine that sets focus to the
+	currently maximized window then forces the status bar to redraw to
+	siaynoq_set_wnd_handle_on_track().
+	(siaynoq_is_newly_created_target_wnd_tileable): Added a check for
+	WS_VISIBLE in the target window's style in an effort to fix the
+	bug that causes windows that appear then suddenly disappear to
+	unduly affect the tiling.
+
+	* src/hooks.h (struct SIAYNOQSHAREDMEM): Added flag specifying
+	which subdesktop is currently focused on by the shell.
+
+2007-04-26  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/hooks.c (siaynoq_calc_wnd_on_track_dimension): Moved code to
+	update the status bar to here from siaynoq_hook_cbtproc() in an
+	effort to force the damn status bar to update the window title it
+	contains.  Well, it works.

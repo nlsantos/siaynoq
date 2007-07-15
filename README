@@ -1,0 +1,39 @@
+siaynoq :: the typical geek's anti-shell for Windows
+
+
+  It isn't skinnable, themeable, configurable or <insert favorite fancy
+  adjective here>.
+
+  It doesn't try to catch your eye or invite you to fiddle with it; in
+  fact, it tries hard not to be noticed.
+
+  It doesn't try to change the way you interact with your computer into
+  a radically enchanting and fundamentally life-altering one.  It just
+  tries to help you get your work done.
+
+  In other words, it doesn't try to do more than is absolutely
+  necessary.  If other tools can be found to take care of a particular
+  job, pass the buck.
+
+
+:: projects I stole from
+
+ Heavily influenced by larswm[1], which introduced me to the idea of a
+ tiling window manager and from which I borrowed a lot of ideas.
+
+ Several things where also borrowed from dwm[2]: mainly, the idea that
+ an explicit list of window classes/instances to tile can be done away
+ with.
+
+ I learned how to fiddle with Windows hooks through TraySaver[3] and
+ LiteShell's source code.  The latter, incidentally, was my proof that a
+ shell need not be bloated to be useful.
+
+
+                                                          Neil Santos [rls]
+                                          neil_santos@users.sourceforge.net
+
+
+1. http://larswm.fnurt.net/
+2. http://dwm.suckless.org/
+3. http://www.mlin.net/

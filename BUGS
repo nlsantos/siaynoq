@@ -1,0 +1,57 @@
+KNOWN BUGS						-*- text -*-
+
+- Sometimes, Windows will fail to immediately unload the DLL containing
+  the hooks, even though the call to FreeLibrary() succeeds.  This
+  causes the DLL to deny all requests at modification.  The only known
+  solutions are to either wait for Windows to free the library on its
+  own (which can take a few minutes), to log off and then on again
+  (though that sometimes fails, as well, if the app that references the
+  hook library is started as a service, for example), or to reboot the
+  system.
+
+- Use under Explorer is, while possible, not entirely pain-free.  I
+  haven't bothered putting in any checks and/or considerations for other
+  free software shells, let alone Explorer.
+
+- If X-Mouse is turned on, tile-on-focus is a bit flaky.  In the worst
+  case, the current and previous tracked windows will switch places in
+  rapid succession (this occurs when Windows fails to get the cursor to
+  jump to within the focused window's client area).  It's possible that
+  this glitch could cause an application to crash, though I haven't
+  experienced that personally..
+
+- The whole project is not reentrancy-proof.  This is a boon in some
+  ways (though I forgot which ways), but certainly a pain in others.
+  For example, if a request for tiling comes in while an earlier request
+  is still being processed, the shell throws up its hands in frustration
+  then falls to its knees and weeps.  (Well, not really...  But it does
+  make the shell seem a lot slower than it actually is.)
+
+- Everytime focus changes, memory usage is incremented by about 8k if
+  the currently and previously maximized window handles are both NULL,
+  4k if only one or the other is.
+
+  Preliminary tests with the MemWatch library helped catch -one-
+  malloc()'d string that wasn't properly free()'d.  This doesn't account
+  for the almost 200% increase in physical memory usage.
+
+- Startup items are no longer ignored, but their execution is
+  unsatisfactory.
+
+- There is no logic at all to the position of the unfocused windows.
+  Implement a stack to hold them in?  Better yet, maybe a linked list.
+
+- The `CoolSwitch' window (the one that appears on when Alt-Tabbing)
+  gets tiled.  To reproduce this, set the value of
+  TIMEOUT_WINDOW_ACTIVATE in config.h to a suitably high number (say,
+  500 or so).  With a window on the track, Alt-Tab to a new one to
+  switch focus and activate the timer.  Before the timer expires,
+  Alt-Tab once again to bring out the `CoolSwitch' window.  When the
+  windows are tiled, `CoolSwitch' will be included.
+
+  What gets my goat so thoroughly is the fact that the damn thing is too
+  hard to get at to examine with something like Spy++, so I'm bound to
+  just hardcode an exception in the tiling code.  Worse yet, when you
+  let Alt-Tab go, and `CoolSwitch' is removed from the screen, it
+  doesn't trigger a retiling (it doesn't look like Windows sends a
+  HSHELL_WINDOWDESTROYED when that happens).
