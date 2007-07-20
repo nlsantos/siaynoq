@@ -4,7 +4,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -17,15 +17,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
  * USA
  ***/
-#ifndef _TILING_H_ // include guard
+#ifndef _TILING_H_ /* include guard */
 #define _TILING_H_
 
 #include <windows.h>
 
+typedef struct
+{
+  LPCTSTR wnd_class_name;
+  BOOL should_tile;
+} TILING_RULE;
+
 #define SIAYNOQ_MSG_APP_FOCUS_CHANGE "siaynoq_msg_app_focus_change"
 #define SIAYNOQ_MSG_APP_LOSING_WINDOW "siaynoq_msg_app_losing_window"
 
-// Yes, these are global variables.  No, I am not ashamed. :P
+/* Yes, these are global variables.  No, I am not ashamed. :P */
 HWND siaynoq_next_maximized_wnd_handle;
 HWND siaynoq_curr_maximized_wnd_handle;
 HWND siaynoq_prev_maximized_wnd_handle;
@@ -46,4 +52,4 @@ UINT siaynoq_tile_non_focused_wnd ();
 BOOL siaynoq_is_new_wnd_tileable (HWND, DWORD, DWORD);
 BOOL siaynoq_is_target_wnd_tileable (HWND);
 
-#endif
+#endif /* _TILING_H_ */

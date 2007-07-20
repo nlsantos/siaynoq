@@ -4,7 +4,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -128,7 +128,7 @@ shared_mem_struct_init (HANDLE file_mapping_obj, LPCTSTR file_map_name, const si
 
 
 BOOL
-shared_mem_struct_free (LPCVOID shared_mem, HANDLE file_mapping_obj)
+shared_mem_struct_free (LPVOID shared_mem, HANDLE file_mapping_obj)
 {
   BOOL retval;
 
@@ -172,7 +172,7 @@ shared_mem_struct_free (LPCVOID shared_mem, HANDLE file_mapping_obj)
               lpDisplayBuf = (LPVOID) LocalAlloc (LMEM_ZEROINIT, 
                                                   (lstrlen ((LPCTSTR) lpMsgBuf) + 100) * sizeof (TCHAR)); 
               wsprintf ((LPTSTR) lpDisplayBuf, 
-                        TEXT("!!! CloseHandle() failed with error %d: %s"), 
+                        TEXT("!!! CloseHandle() failed with error %d: %s"),
                         dw, lpMsgBuf);
               debug_output (lpDisplayBuf);
 
@@ -267,6 +267,60 @@ reg_set_value (LPTSTR value_name, LPVOID data, DWORD size, DWORD reg_type,
 }
 
 
+/**
+ * Encapsulate execution of specified paths.
+ *
+ * Hide the mess necessary when dealing with CreateProcess() and
+ * ShellExecute() and let a coder focus on fixing bugs.
+ *
+ * If use_shell is TRUE, system_spawn() will use ShellExecute(),
+ * CreateProcess() otherwise.  Consequently, when setting use_shell to
+ * TRUE, make sure that the action parameter contains a valid object
+ * `verb'.
+ *
+ * The return value differs according to the mode selected to execute
+ * the command line; see the documentation on the encapsulated API calls
+ * for more details.
+ */
+int
+system_spawn (LPTSTR cmd_line, LPCTSTR params, LPCTSTR curr_dir,
+              BOOL use_shell, LPCTSTR action)
+{
+  int retval = 0;
+
+  debug_output ("~~~ Trying to run command-line");
+  debug_output (cmd_line);
+
+  if (use_shell)
+    { /* Quick note: ShellExecute() returns  32 or lower on failure */
+      retval = (int) ShellExecute (NULL, action, cmd_line, params,
+                                   curr_dir, SW_SHOWDEFAULT);
+      if (32 >= retval)
+        debug_output ("!!! system_spawn() failed while using ShellExecute()");
+    }
+  else
+    { /* Quick note: CreateProcess() returns non-zero on failure */
+      STARTUPINFO startup_info;
+      PROCESS_INFORMATION proc_info;
+
+      GetStartupInfo (&startup_info);
+      retval = CreateProcess (NULL, cmd_line, NULL, NULL, FALSE,
+                              DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP,
+                              NULL, NULL, &startup_info, &proc_info);
+
+      if (!retval)
+        {
+          CloseHandle (proc_info.hProcess);
+          CloseHandle (proc_info.hThread);
+        }
+      else
+        debug_output ("!!! system_spawn() failed while using CreateProcess()");
+    } /* not (use_shell) */
+
+  return retval;
+}
+
+
 #ifndef _HOOKS_H_
 #include "hooks.h"
 static HANDLE siaynoq_lib_handle_hook = NULL;
@@ -276,6 +330,7 @@ hooks_dll_load (HWND main_wnd_handle)
 {
   if (NULL == siaynoq_lib_handle_hook)
     {
+      debug_output ("!!! Hooks library is not loaded; trying to load...");
       siaynoq_lib_handle_hook = LoadLibrary ("wafer.dll");
 
       if (NULL == siaynoq_lib_handle_hook)

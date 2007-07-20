@@ -4,7 +4,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
  * USA
  ***/
-#ifndef _SIAYNOQ_H_ // include guard
+#ifndef _SIAYNOQ_H_ /* include guard */
 #define _SIAYNOQ_H_
 
 #include <windows.h>
@@ -30,7 +30,7 @@ const char* SIAYNOQ_WND_TITLE_DESKTOP;
 BOOL siaynoq_init (HINSTANCE);
 BOOL siaynoq_free ();
 
-// Intended to be called with CreateThread
+/* Intended to be called with CreateThread */
 DWORD WINAPI siaynoq_run_startup_items (LPVOID);
 
 /*** Main window class registration function
@@ -107,4 +107,4 @@ HWND siaynoq_wnd_create_desktop (HINSTANCE, ATOM);
  */
 LRESULT CALLBACK siaynoq_wnd_proc_desktop (HWND, UINT, WPARAM, LPARAM);
 
-#endif // _SIAYNOQ_H_
+#endif /* _SIAYNOQ_H_ */

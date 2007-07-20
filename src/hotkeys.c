@@ -4,7 +4,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -19,6 +19,7 @@
  ***/
 #include "hotkeys.h"
 #include "config.h"
+#include "tiling.h"
 
 typedef struct
 {
@@ -65,7 +66,7 @@ siaynoq_hotkeys_func_ptr_by_name (LPTSTR func_name)
     {
       SIAYNOQHOTKEYFUNCNAMEPAIR func_name_pair = siaynoq_hotkey_function_name_pairs[idx];
 
-      if (0 == strcmpi (func_name_pair.name, func_name))
+      if (0 == lstrcmpi (func_name_pair.name, func_name))
         return func_name_pair.func;
     }
 
@@ -208,13 +209,15 @@ exit_shell (SIAYNOQHOTKEYARG ignore)
 void
 switch_users (SIAYNOQHOTKEYARG ignore)
 {
-  // At some point, I've got to include checks for the OS version before triggering this...
+  /* At some point, I've got to include checks for the OS version before
+     triggering this... */
   LockWorkStation ();
 }
 
 void
 logoff_user (SIAYNOQHOTKEYARG ignore)
 {
+  ExitWindowsEx (EWX_LOGOFF, 0);
 }
 
 void

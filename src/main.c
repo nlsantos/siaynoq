@@ -4,7 +4,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -18,18 +18,13 @@
  * USA
  ***/
 #include "siaynoq.h"
+#include "tools.h"
 
 const LPTSTR SIAYNOQ_SINGULARITY_MUTEX = "siaynoq_singularity_mutex";
 
 int APIENTRY
 WinMain (HINSTANCE instance, HINSTANCE prev, LPTSTR cmd_line, int cmd_show)
 {
-  if (MEMWATCH)
-    {
-      mwStatistics (2);
-      mwAutoCheck (1);
-    }
-
   /** xxx *** Security warning *** xxx **
    *
    * The mutex below is used to limit the shell to a single instance.
@@ -52,9 +47,9 @@ WinMain (HINSTANCE instance, HINSTANCE prev, LPTSTR cmd_line, int cmd_show)
     }
   else if (siaynoq_init (instance))
     {
-/*       CreateThread (NULL, 0, siaynoq_run_startup_items, NULL, 0, NULL); */
-
       MSG msg;
+
+      CreateThread (NULL, 0, siaynoq_run_startup_items, NULL, 0, NULL);
 
       while (GetMessage (&msg, NULL, 0, 0) > 0)
         {

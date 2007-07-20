@@ -4,7 +4,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -17,7 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
  * USA
  ***/
-#ifndef _HOOKS_H_ // include guard
+#ifndef _HOOKS_H_ /* include guard */
 #define _HOOKS_H_
 
 #include <windows.h>
@@ -42,4 +42,4 @@ extern C {
 }
 #endif
 
-#endif // _HOOKS_H_
+#endif /* _HOOKS_H_ */

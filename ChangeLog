@@ -1,3 +1,57 @@
+2007-07-21  Tuncer Ayaz  <tuncer.ayaz@gmail.com>
+
+	* src/tiling.c (siaynoq_is_new_wnd_tileable): Replace blacklist
+	checking with an iteration through the tiling_rules option.
+
+	* src/config.h (tiling_rules): New option.  An array of TILING_RULE
+
+	* src/tiling.h (struct TILING_RULE): New struct.  Holds a rule to
+	determine what state a given window class name should have applied
+	to it (tiled or untiled).
+
+2007-07-21  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/tiling.c (siaynoq_is_new_wnd_tileable): Replaced calls to
+	strcmpi() with calls to lstrcmpi().
+
+	* src/hotkeys.c (siaynoq_hotkeys_func_ptr_by_name): Replaced call
+	to strcmpi() with call to lstrcmpi().
+
+	* src/config.h: Removed dependency on MemWatch.
+
+	* src/SConstruct: Added a command line flag to tell GCC to play
+	nice with compilers that don't support C99; should help to get
+	MSVC to be consider us a friend.  (On by default.)
+	Added a command line flag to turn on GCC's strict
+	behavior (warnings are considered errors).
+	Removed lingering dependency on MemWatch.
+
+	* src/tools.c (system_spawn): New function.
+
+	* src/siaynoq.c (siaynoq_init): Moved startup item code here.
+	(siaynoq_run_startup_items): Changed requested key access to
+	minimum required to be able to open target startup keys.
+
+	* src/main.c (WinMain): Remove commented code to begin running
+	startup items.
+
+2007-07-20  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/hotkeys.c (logoff_user): Implemented code to actually log
+	the current user out.
+
+2007-07-19  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/tiling.c: Added copyright notice.
+
+	* src/config.h, src/hooks.c, src/hooks.h, src/hotkeys.c: Changed
+	copyright notices to put the project under version 3 of the GNU
+	General Public License.
+
+	* src/hotkeys.h, src/main.c, src/siaynoq.c, src/siaynoq.h: Likewise.
+
+	* src/tiling.h, src/tools.c, src/tools.h: Likewise
+
 2007-05-13  Neil Santos  <neil_santos@users.sourceforge.net>
 
 	* src/hotkeys.c (put_focused_window_on_track): Tiling code no

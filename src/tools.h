@@ -4,7 +4,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -17,13 +17,14 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
  * USA
  ***/
-#ifndef _TOOLS_H_ // include guard
+#ifndef _TOOLS_H_ /* include guard */
 #define _TOOLS_H_
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <windows.h>
+#include <shellapi.h>
 
 #ifndef _HOTKEYS_H_
 typedef struct
@@ -39,7 +40,7 @@ typedef struct
 BOOL adjust_process_priviledge ();
 
 LPVOID shared_mem_struct_init (HANDLE, LPCTSTR, const size_t);
-BOOL shared_mem_struct_free (LPCVOID, HANDLE);
+BOOL shared_mem_struct_free (LPVOID, HANDLE);
 #endif
 
 void debug_output (LPCTSTR);
@@ -52,4 +53,4 @@ HANDLE hooks_dll_load (HWND);
 BOOL hooks_dll_unload ();
 #endif
 
-#endif
+#endif /* _TOOLS_H */

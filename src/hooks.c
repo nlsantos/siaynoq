@@ -4,7 +4,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -18,9 +18,9 @@
  * USA
  ***/
 #include "hooks.h"
-#include "tiling.h"
 #include "tools.h"
 #include "config.h"
+#include "tiling.h"
 
 typedef struct
 {
@@ -47,12 +47,6 @@ DllMain (HINSTANCE instance, DWORD reason, LPVOID reserved)
   switch (reason)
     {
     case DLL_PROCESS_ATTACH:
-      if (MEMWATCH)
-        {
-          mwStatistics (2);
-          mwAutoCheck (1);
-        }
-
       siaynoq_shared_main_wnd_handle = (HWND*) shared_mem_struct_init (siaynoq_file_mapping_obj,
                                                                        "SIAYNOQ_SHARED_MAIN_WND_HANDLE",
                                                                        sizeof (HWND));
@@ -79,7 +73,7 @@ DllMain (HINSTANCE instance, DWORD reason, LPVOID reserved)
       break;
 
     case DLL_PROCESS_DETACH:
-      shared_mem_struct_free ((LPCVOID) siaynoq_shared_main_wnd_handle,
+      shared_mem_struct_free ((LPVOID) siaynoq_shared_main_wnd_handle,
                               siaynoq_file_mapping_obj);
       break;
     }
@@ -93,6 +87,18 @@ siaynoq_hook_shellproc (int code, WPARAM wParam, LPARAM lParam)
 {
   if (0 <= code)
     {
+      debug_output ("@@@ Here we go...");
+      if (DEBUG)
+        {
+          FILE *fp;
+          fp = fopen ("d:\\siaynoq.log", "a");
+          fprintf (fp, "--- %u shellproc code\n", code);
+          fprintf (fp, "--- %u HSHELL_WINDOWACTIVATED\n", HSHELL_WINDOWACTIVATED);
+          fprintf (fp, "--- %u HSHELL_WINDOWDESTROYED\n", HSHELL_WINDOWDESTROYED);
+          fflush (fp);
+          fclose (fp);
+        }
+
       if (HSHELL_WINDOWACTIVATED == code)
         {
           debug_output ("@@@ HSHELL_WINDOWACTIVATED");
@@ -102,53 +108,22 @@ siaynoq_hook_shellproc (int code, WPARAM wParam, LPARAM lParam)
 
           if ((NULL != target_wnd_handle)
               && (!is_target_wnd_handle_fullscreen)
-              && (HIBYTE (GetAsyncKeyState (MAIN_MOD_KEY)) != 128) // Specified mod key musn't be pressed
+              && (HIBYTE (GetAsyncKeyState (MAIN_MOD_KEY)) != 128) /* Specified mod key musn't be pressed */
               && (*siaynoq_shared_main_wnd_handle != target_wnd_handle))
             {
               debug_output ("!!! Focus changed; mod key isn't pressed; window isn't full screen");
               PostMessage (*siaynoq_shared_main_wnd_handle, SY_WINDOWACTIVATED, wParam, (LPARAM) NULL);
-
-              /*
-              if (DEBUG)
-                {
-                  LPTSTR wnd_title;
-                  int len_title;
-
-                  len_title = GetWindowTextLength (target_wnd_handle) + 1;
-                  wnd_title = malloc (len_title * sizeof (TCHAR));
-                  if (NULL != wnd_title)
-                    {
-                      GetWindowText (target_wnd_handle, wnd_title, len_title);
-                      debug_output ("^^^ target");
-                      debug_output (wnd_title);
-                    }
-                  free (wnd_title);
-
-                  len_title = GetWindowTextLength (siaynoq_shared_mem->curr_maximized_wnd_handle) + 1;
-                  wnd_title = malloc (len_title * sizeof (TCHAR));
-                  if (NULL != wnd_title)
-                    {
-                      GetWindowText (siaynoq_shared_mem->curr_maximized_wnd_handle, wnd_title, len_title);
-                      debug_output ("^^^ maximized");
-                      debug_output (wnd_title);
-                    }
-                  free (wnd_title);
-                }
-
-                siaynoq_shared_mem->prev_maximized_wnd_handle = siaynoq_set_wnd_handle_on_track (target_wnd_handle, FALSE, NULL);
-
-                if (siaynoq_shared_mem->prev_maximized_wnd_handle == siaynoq_shared_mem->curr_maximized_wnd_handle)
-                  debug_output ("!!! Current and previous maximized window handles are the same");
-              */
             }
           else
             debug_output ("!!! Focus changed; mod key is pressed or window is full screen");
-        } // HSHELL_WINDOWACTIVATED
+        } /* HSHELL_WINDOWACTIVATED */
       else if (HSHELL_WINDOWDESTROYED == code)
         {
           debug_output ("@@@ HSHELL_WINDOWDESTROYED");
           PostMessage (*siaynoq_shared_main_wnd_handle, SY_WINDOWDESTROYED, wParam, (LPARAM) NULL);
-        } // HSHELL_WINDOWDESTROYED
+        } /* HSHELL_WINDOWDESTROYED */
+
+      return 0;
     }
 
   return CallNextHookEx (NULL, code, wParam, lParam);

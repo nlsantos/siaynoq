@@ -1,3 +1,22 @@
+/***
+ * siaynoq -- a typically geeky shell replacement for Windows
+ * Copyright (C) 2007 Neil Santos <neil_santos@users.sourceforge.net>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or (at
+ * your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA
+ ***/
 #include "tiling.h"
 #include "tools.h"
 #include "config.h"
@@ -29,25 +48,25 @@ siaynoq_is_new_wnd_tileable (HWND target_wnd,
       || (target_wnd == siaynoq_marked_for_destruction_wnd_handle))
     return FALSE;
 
-  // Discard non-top level and/or non-app windows
+  /* Discard non-top level and/or non-app windows */
   if (((style_create & WS_POPUP)
        || (style_create & WS_POPUPWINDOW))
       && (!(((style_create & WS_MAXIMIZEBOX)
              || (style_create & WS_TILEDWINDOW)
              || (style_create & WS_OVERLAPPEDWINDOW)
              || (exstyle_create & WS_EX_APPWINDOW))
-            && (style_create & WS_VISIBLE)))) // This is *NOT* the same as IsWindowVisible()!
+            && (style_create & WS_VISIBLE)))) /* This is *NOT* the same as IsWindowVisible()! */
     {
       debug_output ("~~~ not tileable: doesn't have title bar or is not tagged as an appwindow");
       return FALSE;
     }
 
-  // The following block checks for window classes that are off-limits
+  /* The following block checks for window classes that are off-limits */
   LPTSTR wnd_class_name;
   BOOL retval;
 
   retval = TRUE;
-  wnd_class_name = malloc (sizeof (TCHAR) * 100); // Will this always be long enough?
+  wnd_class_name = malloc (sizeof (TCHAR) * 100); /* Will this always be long enough? */
 
   if (NULL == wnd_class_name)
     {
@@ -63,20 +82,21 @@ siaynoq_is_new_wnd_tileable (HWND target_wnd,
           debug_output ("~~~ Class name");
           debug_output (wnd_class_name);
 
-          if (0 == strcmpi (wnd_class_name, "ConsoleWindowClass"))
-            { // Don't fuck with Windows' command shell; class name accurate for XP
-              retval = FALSE;
-              debug_output ("!!! command shell detected; electing to not mess with it");
-            }
-          else if (0 == strcmpi (wnd_class_name, "#32770"))
-            { // Don't fuck with Windows' task manager; class name accurate for XP
-              retval = FALSE;
-              debug_output ("!!! windows task manager detected; electing to not mess with it");
-            }
-          else if (0 == strcmpi (wnd_class_name, "Shell_TrayWnd"))
-            { // Don't fuck with Windows' systray; class name accurate for W95 until XP
-              retval = FALSE;
-              debug_output ("!!! windows systray detected; electing to not mess with it");
+          if (tiling_rules)
+            {
+              UINT rule_count = sizeof (tiling_rules) / sizeof (tiling_rules[0]);
+              UINT idx;
+
+              for (idx = 0; idx < rule_count; ++idx)
+                {
+                  TILING_RULE rule = tiling_rules[idx];
+
+                  if ((NULL == rule.wnd_class_name) || (1 > strlen (rule.wnd_class_name)))
+                    continue;
+
+                  if (0 == lstrcmpi (wnd_class_name, rule.wnd_class_name))
+                    retval = rule.should_tile;
+                }
             }
         }
 
@@ -111,7 +131,7 @@ siaynoq_is_new_wnd_tileable (HWND target_wnd,
 BOOL
 siaynoq_is_target_wnd_tileable (HWND target_wnd)
 {
-  // Discard invisible windows
+  /* Discard invisible windows */
   if (!(IsWindowVisible (target_wnd)))
     return FALSE;
 

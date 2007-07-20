@@ -4,7 +4,7 @@
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  *
  * This program is distributed in the hope that it will be useful, but
@@ -31,7 +31,7 @@
 
 #include <shellapi.h>
 
-// Items needed from shlobj.h
+/* Items needed from shlobj.h */
 #define CSIDL_COMMON_STARTUP	24
 #define CSIDL_COMMON_ALTSTARTUP	30
 #define CSIDL_STARTUP		7
@@ -45,7 +45,7 @@ BOOL WINAPI SHGetSpecialFolderPathW (HWND,LPWSTR,int,BOOL);
 #else
 #  define SHGetSpecialFolderPath SHGetSpecialFolderPathA
 #endif
-// - Items needed from shlobj.h
+/* - Items needed from shlobj.h */
 
 const char* SIAYNOQ_WND_CLASSNAME = "SiaynoqWndClass";
 const char* SIAYNOQ_WND_CLASSNAME_DESKTOP = "SiaynoqWndClassDesktop";
@@ -90,7 +90,7 @@ siaynoq_init (HINSTANCE instance)
       return FALSE;
     }
 
-  // Load hooks library here
+  /* Load hooks library here */
   siaynoq_lib_handle_hook = hooks_dll_load (siaynoq_main_wnd_handle);
   retval &= (NULL != siaynoq_lib_handle_hook);
 
@@ -121,7 +121,7 @@ siaynoq_init (HINSTANCE instance)
   if (DEBUG)
     assert (retval);
 
-  // Tile foreground window immediately
+  /* Tile foreground window immediately */
   if (retval)
     put_focused_window_on_track ((SIAYNOQHOTKEYARG) { 0 });
 
@@ -142,7 +142,7 @@ siaynoq_free ()
       retval &= FALSE;
     }
 
-  // Unload hooks library here
+  /* Unload hooks library here */
   retval &= hooks_dll_unload ();
 
   return retval;
@@ -187,6 +187,7 @@ siaynoq_wnd_regclass_statusbar (HINSTANCE instance)
 }
 
 
+/* This is dirty as fucking hell.  Needs to be rewritten. */
 DWORD WINAPI
 siaynoq_run_startup_items (LPVOID ignore)
 {
@@ -209,7 +210,7 @@ siaynoq_run_startup_items (LPVOID ignore)
         if (ERROR_SUCCESS == (RegOpenKeyEx (target_keys[key_idx],
                                             target_subkeys[subkey_idx],
                                             0,
-                                            KEY_ALL_ACCESS,
+                                            KEY_READ,
                                             &reg_key)))
           {
             DWORD num_values, max_name_len, max_value_len;
@@ -342,7 +343,10 @@ siaynoq_run_startup_items (LPVOID ignore)
                                                    NULL,
                                                    startup_path,
                                                    SW_SHOWDEFAULT)))
-                      debug_output ("!!! ShellExecute() returned an error value");
+                      {
+                        debug_output ("!!! ShellExecute() returned an error value");
+                        debug_output (find_data.cFileName);
+                      }
                     else
                       {
                         debug_output ("~~~ Startup item value");
@@ -382,7 +386,7 @@ siaynoq_wnd_create_statusbar (HINSTANCE instance, ATOM class_atom)
 
       siaynoq_resize_work_area ();
 
-      // Register timer for time/date display updates
+      /* Register timer for time/date display updates */
       if (0 == siaynoq_time_date_display_timer)
         {
           siaynoq_time_date_display_timer = SetTimer (wnd_handle,
@@ -395,7 +399,7 @@ siaynoq_wnd_create_statusbar (HINSTANCE instance, ATOM class_atom)
             debug_output ("~~~ Time/date update timer successfully installed");
         }
 
-      // Request notification for session messages
+      /* Request notification for session messages */
       if (!(WTSRegisterSessionNotification (wnd_handle, NOTIFY_FOR_THIS_SESSION)))
         debug_output ("!!! Request for session messages failed");
     }
@@ -442,7 +446,7 @@ siaynoq_wnd_proc_statusbar (HWND wnd_handle, UINT message, WPARAM wParam, LPARAM
       debug_output ("@@@ SY_WINDOWDESTROYED");
       HWND target_wnd_handle = (HWND) wParam;
 
-      // TODO: Add code to make sure that, for n tileable windows, one is on the track if n > 0
+      /* TODO: Add code to make sure that, for n tileable windows, one is on the track if n > 0 */
       if (target_wnd_handle != siaynoq_main_wnd_handle)
         {
           siaynoq_marked_for_destruction_wnd_handle = target_wnd_handle;
@@ -484,7 +488,7 @@ siaynoq_wnd_proc_statusbar (HWND wnd_handle, UINT message, WPARAM wParam, LPARAM
                   debug_output (wnd_title);
                 }
               free (wnd_title);
-            } // DEBUG
+            } /* DEBUG */
 
           if (NULL == siaynoq_prev_maximized_wnd_handle)
             {
@@ -516,8 +520,8 @@ siaynoq_wnd_proc_statusbar (HWND wnd_handle, UINT message, WPARAM wParam, LPARAM
               siaynoq_set_wnd_handle_on_track (siaynoq_prev_maximized_wnd_handle, FALSE, NULL);
               siaynoq_prev_maximized_wnd_handle = NULL;
             }
-        } // target_wnd_handle != siaynoq_main_wnd_handle
-    } // SY_WINDOWDESTROYED == message
+        } /* target_wnd_handle != siaynoq_main_wnd_handle */
+    } /* SY_WINDOWDESTROYED == message */
   else if (WM_TIMER == message)
     {
       if (SIAYNOQ_TIME_DATE_DISPLAY_TIMER_EVENT_ID == (UINT_PTR) wParam)
@@ -670,7 +674,7 @@ siaynoq_wnd_proc_statusbar (HWND wnd_handle, UINT message, WPARAM wParam, LPARAM
       HBITMAP buf_bmp = CreateCompatibleBitmap (main_dc, sbar_dimensions.right, sbar_dimensions.right);
       HBITMAP old_bmp = (HBITMAP) SelectObject (buf_dc, buf_bmp);
 
-      // Draw tile layout indicator
+      /* Draw tile layout indicator */
       HDC layout_dc = CreateCompatibleDC (NULL);
       HFONT layout_old_font = (HFONT) SelectObject (layout_dc, font_handle);
       SetBkMode (layout_dc, TRANSPARENT);
@@ -694,9 +698,9 @@ siaynoq_wnd_proc_statusbar (HWND wnd_handle, UINT message, WPARAM wParam, LPARAM
       DeleteObject (layout_bitmap);
       DeleteObject (layout_old_bitmap);
       DeleteDC (layout_dc);
-      // Drew tile layout indicator
+      /* Drew tile layout indicator */
 
-      // Draw time/date
+      /* Draw time/date */
       HDC time_date_dc = CreateCompatibleDC (NULL);
       HFONT time_date_old_font = (HFONT) SelectObject (time_date_dc, font_handle);
       SetBkMode (time_date_dc, TRANSPARENT);
@@ -730,7 +734,7 @@ siaynoq_wnd_proc_statusbar (HWND wnd_handle, UINT message, WPARAM wParam, LPARAM
                 debug_output ("!!! strftime() returned 0; maybe the buffer's not long enough?");
                 curr_time_date = "siaynoq !!! strftime() returned 0; maybe the buffer's not long enough?";
               }
-        } // !malloc_failed
+        } /* !malloc_failed */
 
       GetTextExtentPoint32 (time_date_dc, curr_time_date, strlen (curr_time_date) + 1, &text_size);
       time_date_coords.left = 0;
@@ -752,9 +756,9 @@ siaynoq_wnd_proc_statusbar (HWND wnd_handle, UINT message, WPARAM wParam, LPARAM
       DeleteObject (time_date_bitmap);
       DeleteObject (time_date_old_bitmap);
       DeleteDC (time_date_dc);
-      // Drew time/date
+      /* Drew time/date */
 
-      // Draw focused window's title
+      /* Draw focused window's title */
       HWND target_wnd_handle;
       UINT target_wnd_handle_title_len;
 
@@ -809,9 +813,9 @@ siaynoq_wnd_proc_statusbar (HWND wnd_handle, UINT message, WPARAM wParam, LPARAM
       DeleteObject (title_old_font);
       DeleteObject (title_old_bitmap);
       DeleteDC (title_dc);
-      // Drew focused window's title
+      /* Drew focused window's title */
 
-      // Copy buf over to the main DC
+      /* Copy buf over to the main DC */
       BitBlt (main_dc, 0, 0, sbar_dimensions.right, sbar_dimensions.bottom, buf_dc, 0, 0, SRCCOPY);
 
       DeleteObject (brush_bg_label);
@@ -891,7 +895,7 @@ siaynoq_wnd_create_desktop (HINSTANCE instance, ATOM class_atom)
 
       if (NULL != wnd_handle)
         {
-          // Use whole screen as work area
+          /* Use whole screen as work area */
           work_area.left = 0;
           work_area.top = 0;
           work_area.right = screen_width;

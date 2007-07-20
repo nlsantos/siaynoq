@@ -4,7 +4,6 @@ import os
 opts = Options ()
 opts.Add (BoolOption ('debug', 'Set to 1 to build with debugging symbols', 0))
 opts.Add (BoolOption ('profile', 'Set to 1 to build with profiling support', 0))
-opts.Add (BoolOption ('memwatch', 'Set to 1 to build with the MemWatch library linked in', 0))
 
 env = Environment (options = opts,
                    CCFLAGS = '-Wall',
@@ -15,15 +14,15 @@ env = Environment (options = opts,
                    CPPDEFINES = {'_WIN32_WINNT': 0x0501,
                                  '_WIN32_IE': 0x0000,
                                  'WIN32_LEAN_AND_MEAN': 1,
-                                 'DEBUG': '${int (debug)}',
-                                 'MEMWATCH': '${int (memwatch)}',
-                                 'MEMWATCH_STDIO': '${int (memwatch)}'},
+                                 'DEBUG': '${int (debug)}',},
                    LIBS = [],
                    LIBPATH = [],
                    )
 
 build_with_debug = ARGUMENTS.get ('debug', 0)
 build_with_profile = ARGUMENTS.get ('profile', 0)
+cuddle_msvc = ARGUMENTS.get ('ansi', 1)
+gcc_strict = ARGUMENTS.get ('strict', 0)
 
 if int (build_with_debug):
     env.Replace (CCFLAGS = env['CCFLAGS'] + ' -g')
@@ -34,10 +33,11 @@ if int (build_with_profile):
     env.Replace (LINKFLAGS = env['LINKFLAGS'] + ' -pg')
     env.Replace (LIBS = env['LIBS'] + ['gmon'])
 
-build_with_memwatch = ARGUMENTS.get ('memwatch', 0)
-if int (build_with_memwatch):
-    env.Replace (LIBS = env['LIBS'] + ['memwatch'])
-    env.Replace (LIBPATH = env['LIBPATH'] + ['d:/usr/local/lib',])
+if int (cuddle_msvc):
+    env.Replace (CCFLAGS = env['CCFLAGS'] + ' -ansi')
+
+if int (gcc_strict):
+    env.Replace (CCFLAGS = env['CCFLAGS'] + ' -Werror')
 
 if not (int (build_with_debug) or int (build_with_profile)):
     env.Replace (CCFLAGS = env['CCFLAGS'] + ' -O3')
