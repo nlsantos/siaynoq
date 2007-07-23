@@ -28,6 +28,9 @@ typedef union
   UINT i;
 } SIAYNOQHOTKEYARG, *SIAYNOQHOTKEYARG_PTR;
 
+/* Put this in your pipe and smoke it, MSVC */
+static const SIAYNOQHOTKEYARG SIAYNOQ_IGNORED_HOTKEY_ARG = { 0 };
+
 typedef void(*SIAYNOQHOTKEYFUNCTION)(SIAYNOQHOTKEYARG);
 
 typedef struct

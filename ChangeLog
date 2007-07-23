@@ -1,3 +1,55 @@
+2007-07-22  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/config.h (tiling_rules): Added rule for Window's CoolSwitch;
+	should stop the damn thing from being tiled.
+
+	* src/tools.c (shared_mem_struct_init): Moved declaration of local
+	variables to top of function, in lieu with efforts to get into bed
+	with MSVC.
+	(reg_get_value, reg_set_value): Change call to RegCreateKeyEx() to
+	use the least privilege necessary for the task.
+	(reg_get_value_info): New function.
+
+	* src/hooks.c (siaynoq_hook_shellproc): Moved declaration of local
+	variables to top of function, in lieu with efforts to get into bed
+	with MSVC.
+
+	* src/siaynoq.c: Removed all `desktop' related items.  Haven't
+	used that `feature' since I made it optional, anyway.
+	(siaynoq_run_startup_items): Split into to
+	functions (siaynoq_run_reg_startup_items,
+	siaynoq_run_fs_startup_items) to facilitate cleanup.
+	(siaynoq_run_reg_startup_items, siaynoq_run_fs_startup_items):
+	Split from siaynoq_run_startup_items.  Now compiles cleanly under
+	MSVC.  Still needs to be cleaned up, though.  I'm sure there's a
+	lot of duplicated functionality in these two functions.
+	(siaynoq_msg_handler_wm_paint): New function.  Handles painting.
+	(siaynoq_msg_handler_wm_paint): Clean up.  Should compile cleanly
+	under MSVC now; hopefully, it's a bit easier to decipher, as well.
+	Further clean up is planned.
+	(siaynoq_msg_handler_sy_windowdestroyed): New function.  Handles
+	the conundrum that ensues whena window is destroyed.
+
+2007-07-21  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/hotkeys.c (siaynoq_hotkeys_init, siaynoq_hotkey_by_func_ptr)
+	(siaynoq_hotkey_by_name): Moved declaration of local
+	variables to top of function, in lieu with efforts to get into bed
+	with MSVC.
+
+	* src/hotkeys.h (SIAYNOQ_IGNORED_HOTKEY_ARG): New global.  Use for
+	hotkey functions that ignore their arguments.  Declared because
+	Microsoft's compiler doesn't understand the inline `{ 0 }'
+	construct cast with a type for initializing unions/structs.
+
+	* src/tools.h: Forgot to add system_spawn()'s prototype; done.
+
+	* src/siaynoq.c (siaynoq_run_startup_items): Replaced crappy block
+	of code using CreateProcess() and attendant crap with call to
+	system_spawn().
+	(siaynoq_run_startup_items): Replaced crappy block of code using
+	ShellExecute() and attendant crap with call to system_spawn().
+
 2007-07-21  Tuncer Ayaz  <tuncer.ayaz@gmail.com>
 
 	* src/tiling.c (siaynoq_is_new_wnd_tileable): Replace blacklist

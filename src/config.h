@@ -65,6 +65,7 @@ static const COLORREF COLOR_FG_LABEL = RGB (255, 255, 255);
 static TILING_RULE tiling_rules[] = {
   /* window class,		should they be tiled? */
   { "#32770",			FALSE }, /* Window's task manager */
+  { "#32771",			FALSE }, /* Window's `CoolSwitch' */
   { "ConsoleWindowClass",	FALSE }, /* Window's command shell */
   { "Shell_TrayWnd",		FALSE }, /* Window's notification area */
   { "",				FALSE },

@@ -85,6 +85,9 @@ DllMain (HINSTANCE instance, DWORD reason, LPVOID reserved)
 LRESULT CALLBACK
 siaynoq_hook_shellproc (int code, WPARAM wParam, LPARAM lParam)
 {
+  HWND target_wnd_handle;
+  BOOL is_target_wnd_handle_fullscreen;
+
   if (0 <= code)
     {
       debug_output ("@@@ Here we go...");
@@ -103,8 +106,8 @@ siaynoq_hook_shellproc (int code, WPARAM wParam, LPARAM lParam)
         {
           debug_output ("@@@ HSHELL_WINDOWACTIVATED");
 
-          HWND target_wnd_handle = (HWND) wParam;
-          BOOL is_target_wnd_handle_fullscreen = (BOOL) lParam;
+          target_wnd_handle = (HWND) wParam;
+          is_target_wnd_handle_fullscreen = (BOOL) lParam;
 
           if ((NULL != target_wnd_handle)
               && (!is_target_wnd_handle_fullscreen)

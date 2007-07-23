@@ -23,13 +23,13 @@
 #include <windows.h>
 
 const char* SIAYNOQ_WND_CLASSNAME;
-const char* SIAYNOQ_WND_CLASSNAME_DESKTOP;
 const char* SIAYNOQ_WND_TITLE;
-const char* SIAYNOQ_WND_TITLE_DESKTOP;
 
 BOOL siaynoq_init (HINSTANCE);
 BOOL siaynoq_free ();
 
+void siaynoq_run_reg_startup_items ();
+void siaynoq_run_fs_startup_items ();
 /* Intended to be called with CreateThread */
 DWORD WINAPI siaynoq_run_startup_items (LPVOID);
 
@@ -70,41 +70,8 @@ HWND siaynoq_wnd_create_statusbar (HINSTANCE, ATOM);
  */
 LRESULT CALLBACK siaynoq_wnd_proc_statusbar (HWND, UINT, WPARAM, LPARAM);
 
-/*** Desktop window class registration function
- *
- * For debug builds, responsible for registering the shell's desktop
- * window class with Windows.
- *
- * If compiled with debugging flags, returns a unique ID for the
- * registered class if successful; otherwise, returns zero.  If built
- * without said flags, this function will always return 1.
- *
- * See RegisterClassEx()
- */
-ATOM siaynoq_wnd_regclass_desktop (HINSTANCE);
-
-/*** Desktop window creation function
- *
- * For debug builds, responsible for creating the shell's desktop
- * window.
- *
- * If compiled with debugging flags, returns the handle to the shell's
- * desktop window if successful; otherwise, or if built without said
- * flags, returns NULL.
- *
- * See CreateWindowEx()
- */
-HWND siaynoq_wnd_create_desktop (HINSTANCE, ATOM);
-
-/*** Application-specific callback function for the desktop window
- *
- * Responsible for handling messages sent to the shell's desktop window.
- *
- * Returns result of the message processing which varies, depending on
- * the particular message handled.
- *
- * See WindowProc()
- */
-LRESULT CALLBACK siaynoq_wnd_proc_desktop (HWND, UINT, WPARAM, LPARAM);
+/* Message-handling functions */
+LRESULT siaynoq_msg_handler_sy_windowdestroyed (HWND, WPARAM, LPARAM);
+LRESULT siaynoq_msg_handler_wm_paint (HWND, WPARAM, LPARAM);
 
 #endif /* _SIAYNOQ_H_ */

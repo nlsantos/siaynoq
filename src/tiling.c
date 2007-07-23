@@ -37,10 +37,19 @@ siaynoq_tiling_init (HWND main_wnd_handle)
 
 
 BOOL
-siaynoq_is_new_wnd_tileable (HWND target_wnd,
-                             DWORD style_create,
+siaynoq_is_new_wnd_tileable (HWND target_wnd, DWORD style_create,
                              DWORD exstyle_create)
 {
+  /* DEBUG */
+  UINT len_wnd_module_filename;
+  LPTSTR wnd_module_filename;
+  /* -DEBUG */
+  BOOL retval;
+  UINT rule_count, rule_idx;
+  UINT len_wnd_class_name;
+  LPTSTR wnd_class_name;
+  TILING_RULE curr_rule;
+
   assert (NULL != target_wnd);
 
   if ((target_wnd == siaynoq_main_wnd_handle)
@@ -61,59 +70,15 @@ siaynoq_is_new_wnd_tileable (HWND target_wnd,
       return FALSE;
     }
 
-  /* The following block checks for window classes that are off-limits */
-  LPTSTR wnd_class_name;
-  BOOL retval;
-
-  retval = TRUE;
-  wnd_class_name = malloc (sizeof (TCHAR) * 100); /* Will this always be long enough? */
-
-  if (NULL == wnd_class_name)
-    {
-      debug_output ("!!! couldn't malloc() memory for the window class name");
-      retval = FALSE;
-    }
-  else
-    {
-      UINT ret_len = RealGetWindowClass (target_wnd, wnd_class_name, 100);
-
-      if (ret_len)
-        {
-          debug_output ("~~~ Class name");
-          debug_output (wnd_class_name);
-
-          if (tiling_rules)
-            {
-              UINT rule_count = sizeof (tiling_rules) / sizeof (tiling_rules[0]);
-              UINT idx;
-
-              for (idx = 0; idx < rule_count; ++idx)
-                {
-                  TILING_RULE rule = tiling_rules[idx];
-
-                  if ((NULL == rule.wnd_class_name) || (1 > strlen (rule.wnd_class_name)))
-                    continue;
-
-                  if (0 == lstrcmpi (wnd_class_name, rule.wnd_class_name))
-                    retval = rule.should_tile;
-                }
-            }
-        }
-
-      if (!retval)
-        debug_output ("~~~ not tileable: class name appears in blacklist");
-    }
-  free (wnd_class_name);
-
   if (DEBUG)
     {
-      LPTSTR wnd_module_filename;
       wnd_module_filename = malloc (sizeof (TCHAR) * (MAX_PATH + 1));
       if (NULL != wnd_module_filename)
         {
-          UINT ret_len = GetWindowModuleFileName (target_wnd, wnd_module_filename, MAX_PATH);
-
-          if (ret_len)
+          len_wnd_module_filename = GetWindowModuleFileName (target_wnd,
+                                                             wnd_module_filename,
+                                                             MAX_PATH);
+          if (len_wnd_module_filename)
             {
               debug_output ("~~~ Module path");
               debug_output (wnd_module_filename);
@@ -124,6 +89,44 @@ siaynoq_is_new_wnd_tileable (HWND target_wnd,
       free (wnd_module_filename);
     }
 
+  if (!tiling_rules)
+    return TRUE;
+
+  /* Check for window classes that are off-limits */
+  retval = TRUE;
+
+  wnd_class_name = malloc (sizeof (TCHAR) * 100); /* Needs to be more robust */
+  if (NULL == wnd_class_name)
+    {
+      debug_output ("!!! couldn't malloc() memory for the window class name");
+      return retval;
+    }
+
+  len_wnd_class_name = RealGetWindowClass (target_wnd, wnd_class_name, 100);
+  if (len_wnd_class_name)
+    {
+      debug_output ("~~~ Class name");
+      debug_output (wnd_class_name);
+
+      rule_count = sizeof (tiling_rules) / sizeof (tiling_rules[0]);
+
+      for (rule_idx = 0; rule_idx < rule_count; ++rule_idx)
+        {
+          curr_rule = tiling_rules[rule_idx];
+
+          if ((NULL == curr_rule.wnd_class_name)
+              || (1 > strlen (curr_rule.wnd_class_name)))
+            continue;
+
+          if (0 == lstrcmpi (wnd_class_name, curr_rule.wnd_class_name))
+            retval = curr_rule.should_tile;
+
+          if (!retval)
+            debug_output ("~~~ not tileable: class name appears in blacklist");
+        }
+      free (wnd_class_name);
+    }
+
   return retval;
 }
 
@@ -131,11 +134,12 @@ siaynoq_is_new_wnd_tileable (HWND target_wnd,
 BOOL
 siaynoq_is_target_wnd_tileable (HWND target_wnd)
 {
+  WINDOWINFO wnd_info;
+
   /* Discard invisible windows */
   if (!(IsWindowVisible (target_wnd)))
     return FALSE;
 
-  WINDOWINFO wnd_info;
   wnd_info.cbSize = sizeof (WINDOWINFO);
   if (!(GetWindowInfo (target_wnd, &wnd_info)))
     {
@@ -152,6 +156,12 @@ siaynoq_set_wnd_handle_on_track (HWND target_wnd,
                                  BOOL target_is_new,
                                  LPCREATESTRUCT reserved)
 {
+  FILE *fp; /* DEBUG */
+
+  HWND retval;
+  UINT num_tiled_windows;
+  RECT dimensions;
+
   if (target_wnd == siaynoq_curr_maximized_wnd_handle)
     return siaynoq_curr_maximized_wnd_handle;
 
@@ -163,17 +173,14 @@ siaynoq_set_wnd_handle_on_track (HWND target_wnd,
   else if (!(siaynoq_is_target_wnd_tileable (target_wnd)))
     return siaynoq_prev_maximized_wnd_handle;
 
-  HWND retval;
-
   retval = siaynoq_curr_maximized_wnd_handle;
 
   siaynoq_curr_maximized_wnd_handle = target_wnd;
 
-  UINT num_tiled_windows = siaynoq_tile_non_focused_wnd ();
+  num_tiled_windows = siaynoq_tile_non_focused_wnd ();
 
   if (DEBUG)
     {
-      FILE *fp;
       fp = fopen ("d:\\siaynoq.log", "a");
       fprintf (fp, "--- %u tileable windows found\n", num_tiled_windows);
       fflush (fp);
@@ -183,7 +190,7 @@ siaynoq_set_wnd_handle_on_track (HWND target_wnd,
   siaynoq_tiled_inactive_uses_max_height = (num_tiled_windows <= 1);
   siaynoq_wnd_on_track_uses_max_space = (0 == num_tiled_windows);
 
-  RECT dimensions = siaynoq_calc_wnd_on_track_dimension ();
+  dimensions = siaynoq_calc_wnd_on_track_dimension ();
 
   if (target_is_new)
     {
@@ -230,6 +237,11 @@ siaynoq_calc_wnd_on_track_dimension ()
 BOOL CALLBACK
 siaynoq_filter_desktop_active_wnd (HWND current_wnd, LPARAM ignore)
 {
+  /* DEBUG */
+  LPTSTR wnd_title;
+  int len_title;
+  /* -DEBUG */
+
   if (!(siaynoq_is_target_wnd_tileable (current_wnd)))
     return TRUE;
 
@@ -237,9 +249,6 @@ siaynoq_filter_desktop_active_wnd (HWND current_wnd, LPARAM ignore)
 
   if (DEBUG)
     {
-      LPTSTR wnd_title;
-      int len_title;
-
       len_title = GetWindowTextLength (current_wnd) + 1;
       wnd_title = malloc (len_title * sizeof (TCHAR));
 
@@ -258,17 +267,24 @@ siaynoq_filter_desktop_active_wnd (HWND current_wnd, LPARAM ignore)
 BOOL CALLBACK
 siaynoq_tile_non_focused_wnd_walker (HWND current_wnd, LPARAM scr_info)
 {
+  /* DEBUG */
+  LPTSTR wnd_title;
+  int len_title;
+  FILE *fp;
+  /* -DEBUG */
+
+  WORD x_start_coord, y_tile_inc;
+  UINT wnd_width, wnd_height;
+  RECT work_area;
+
   if (!(siaynoq_is_target_wnd_tileable (current_wnd)))
     return TRUE;
 
-  WORD x_start_coord = HIWORD (scr_info);
-  WORD y_tile_inc = LOWORD (scr_info);
+  x_start_coord = HIWORD (scr_info);
+  y_tile_inc = LOWORD (scr_info);
 
   if (DEBUG)
     {
-      LPTSTR wnd_title;
-      int len_title;
-
       len_title = GetWindowTextLength (current_wnd) + 1;
       wnd_title = malloc (len_title * sizeof (TCHAR));
 
@@ -276,7 +292,6 @@ siaynoq_tile_non_focused_wnd_walker (HWND current_wnd, LPARAM scr_info)
         {
           GetWindowText (current_wnd, wnd_title, len_title);
 
-          FILE *fp;
           fp = fopen ("d:\\siaynoq.log", "a");
           fprintf (fp, "+++ tiling: %s at_x: %u\n", wnd_title, (siaynoq_tileable_wnd_count * y_tile_inc));
           fflush (fp);
@@ -287,12 +302,7 @@ siaynoq_tile_non_focused_wnd_walker (HWND current_wnd, LPARAM scr_info)
       free (wnd_title);
     }
 
-  RECT work_area;
-
   SystemParametersInfo (SPI_GETWORKAREA, 0, &work_area, 0);
-
-  UINT wnd_width;
-  UINT wnd_height;
 
   wnd_width = work_area.right - x_start_coord;
   wnd_height = work_area.bottom - work_area.top;
@@ -316,6 +326,9 @@ UINT
 siaynoq_tile_non_focused_wnd ()
 {
   UINT retval;
+  WORD y_tile_inc;
+  WORD max_wnd_width;
+  RECT work_area;
 
   debug_output ("::: filtering active windows");
   siaynoq_tileable_wnd_count = 0;
@@ -323,10 +336,6 @@ siaynoq_tile_non_focused_wnd ()
   debug_output ("::: done filtering active windows");
 
   retval = siaynoq_tileable_wnd_count;
-
-  WORD y_tile_inc;
-  WORD max_wnd_width;
-  RECT work_area;
 
   SystemParametersInfo (SPI_GETWORKAREA, 0, &work_area, 0);
 

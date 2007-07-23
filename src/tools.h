@@ -47,6 +47,9 @@ void debug_output (LPCTSTR);
 
 LPBYTE reg_get_value (LPCTSTR, LPDWORD, const LPDWORD, HKEY, LPTSTR);
 BOOL reg_set_value (LPTSTR, LPVOID, DWORD, DWORD, HKEY, LPTSTR, BOOL, BOOL);
+DWORD reg_get_value_info (HKEY, LPDWORD, LPDWORD);
+
+int system_spawn (LPTSTR, LPCTSTR, LPCTSTR, BOOL, LPCTSTR);
 
 #ifndef _HOOKS_H_
 HANDLE hooks_dll_load (HWND);

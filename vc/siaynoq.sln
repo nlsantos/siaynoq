@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual C++ Express 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "siaynoq", "siaynoq.vcproj", "{CD38520C-1B11-4EA7-ACC0-2550852D99C2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0DFC6A2D-7CB2-4947-8E6F-DB311B70A59A} = {0DFC6A2D-7CB2-4947-8E6F-DB311B70A59A}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "wafer", "wafer.vcproj", "{0DFC6A2D-7CB2-4947-8E6F-DB311B70A59A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CD38520C-1B11-4EA7-ACC0-2550852D99C2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CD38520C-1B11-4EA7-ACC0-2550852D99C2}.Debug|Win32.Build.0 = Debug|Win32
+		{CD38520C-1B11-4EA7-ACC0-2550852D99C2}.Release|Win32.ActiveCfg = Release|Win32
+		{CD38520C-1B11-4EA7-ACC0-2550852D99C2}.Release|Win32.Build.0 = Release|Win32
+		{0DFC6A2D-7CB2-4947-8E6F-DB311B70A59A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0DFC6A2D-7CB2-4947-8E6F-DB311B70A59A}.Debug|Win32.Build.0 = Debug|Win32
+		{0DFC6A2D-7CB2-4947-8E6F-DB311B70A59A}.Release|Win32.ActiveCfg = Release|Win32
+		{0DFC6A2D-7CB2-4947-8E6F-DB311B70A59A}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

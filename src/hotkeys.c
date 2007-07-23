@@ -76,10 +76,11 @@ siaynoq_hotkeys_func_ptr_by_name (LPTSTR func_name)
 BOOL
 siaynoq_hotkeys_init (HWND main_wnd_handle, HANDLE hook_lib_handle)
 {
+  BOOL retval;
+
   assert (NULL != main_wnd_handle);
   assert (NULL != hook_lib_handle);
 
-  BOOL retval;
   retval = TRUE;
 
   if (hotkeys != NULL)
@@ -152,10 +153,10 @@ siaynoq_hotkeys_free ()
 SIAYNOQHOTKEY*
 siaynoq_hotkey_by_func_ptr (SIAYNOQHOTKEYFUNCTION func_ptr)
 {
-  assert (NULL != func_ptr);
-
   UINT hotkey_count = sizeof (hotkeys) / sizeof (hotkeys[0]);
   UINT idx;
+
+  assert (NULL != func_ptr);
 
   for (idx = 0; idx < hotkey_count; idx++)
     {
@@ -171,9 +172,9 @@ siaynoq_hotkey_by_func_ptr (SIAYNOQHOTKEYFUNCTION func_ptr)
 SIAYNOQHOTKEY*
 siaynoq_hotkey_by_name (LPTSTR func_name)
 {
-  assert (NULL != func_name);
-
   SIAYNOQHOTKEYFUNCTION func_ptr = siaynoq_hotkeys_func_ptr_by_name (func_name);
+
+  assert (NULL != func_name);
 
   if (NULL == func_ptr)
     debug_output ("got a NULL func ptr from a func name");

@@ -86,6 +86,7 @@ LPVOID
 shared_mem_struct_init (HANDLE file_mapping_obj, LPCTSTR file_map_name, const size_t struct_size)
 {
   LPVOID shared_mem;
+  BOOL init_shared_mem;
 
   if (NULL != file_mapping_obj)
     {
@@ -100,7 +101,7 @@ shared_mem_struct_init (HANDLE file_mapping_obj, LPCTSTR file_map_name, const si
                                         struct_size,
                                         file_map_name);
 
-  BOOL init_shared_mem = (GetLastError () != ERROR_ALREADY_EXISTS);
+  init_shared_mem = (GetLastError () != ERROR_ALREADY_EXISTS);
 
   if (NULL == file_mapping_obj)
     {
@@ -204,7 +205,7 @@ reg_get_value (LPCTSTR value_name, LPDWORD size, const LPDWORD reg_type, HKEY ke
                                         subkey_name,
                                         0, NULL,
                                         REG_OPTION_NON_VOLATILE,
-                                        KEY_ALL_ACCESS,
+                                        KEY_READ,
                                         NULL,
                                         &reg_key,
                                         NULL)))
@@ -240,7 +241,7 @@ reg_set_value (LPTSTR value_name, LPVOID data, DWORD size, DWORD reg_type,
                                         subkey_name,
                                         0, NULL,
                                         (opt_volatile) ? REG_OPTION_VOLATILE : REG_OPTION_NON_VOLATILE,
-                                        KEY_ALL_ACCESS,
+                                        KEY_WRITE,
                                         NULL,
                                         &reg_key,
                                         NULL)))
@@ -264,6 +265,29 @@ reg_set_value (LPTSTR value_name, LPVOID data, DWORD size, DWORD reg_type,
     }
 
   return retval;
+}
+
+
+/**
+ * Query an open registry key for value-related information.
+ *
+ * Sets the address of the return value (NOT ITS VALUE) to NULL on
+ * failure.
+ */
+DWORD
+reg_get_value_info (HKEY reg_key, LPDWORD max_name_len, LPDWORD max_value_len)
+{
+  LPDWORD value_count;
+
+  if (ERROR_SUCCESS != RegQueryInfoKey(reg_key, NULL, NULL, NULL, NULL, NULL, NULL,
+                                       value_count, max_name_len, max_value_len,
+                                       NULL, NULL))
+    {
+      debug_output ("!!! Error while querying key for info");
+      value_count = NULL;
+    }
+
+  return *value_count;
 }
 
 
