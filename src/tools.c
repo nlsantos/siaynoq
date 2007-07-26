@@ -35,7 +35,7 @@ debug_output (LPCTSTR msg)
 
 
 BOOL
-adjust_process_priviledge ()
+adjust_process_privilege ()
 {
   OSVERSIONINFO os_vers_info;
   os_vers_info.dwOSVersionInfoSize = sizeof (OSVERSIONINFO);
@@ -73,10 +73,10 @@ adjust_process_priviledge ()
                 debug_output ("!!! Can't open process token");
             }
           else
-            debug_output ("!!! Failed to look up priviledge value");
+            debug_output ("!!! Failed to look up privilege value");
         }
       else
-        debug_output ("~~~ Not running on NT; adjusting priviledges not necessary");
+        debug_output ("~~~ Not running on NT; adjusting privileges not necessary");
     }
   return FALSE;
 }

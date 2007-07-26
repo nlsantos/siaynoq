@@ -69,7 +69,7 @@ siaynoq_init (HINSTANCE instance)
 
   retval = TRUE;
 
-  retval &= adjust_process_priviledge ();
+  retval &= adjust_process_privilege ();
 
   siaynoq_statusbar_height = FONT_SIZE + 6;
 

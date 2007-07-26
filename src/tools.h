@@ -37,7 +37,7 @@ typedef struct
   BOOL is_in_tiled_mode;
 } SIAYNOQSHAREDMEM;
 
-BOOL adjust_process_priviledge ();
+BOOL adjust_process_privilege ();
 
 LPVOID shared_mem_struct_init (HANDLE, LPCTSTR, const size_t);
 BOOL shared_mem_struct_free (LPVOID, HANDLE);
