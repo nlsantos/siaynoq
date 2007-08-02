@@ -20,11 +20,15 @@
 #ifndef _TOOLS_H_ /* include guard */
 #define _TOOLS_H_
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <assert.h>
 #include <windows.h>
+#include <tchar.h>
 #include <shellapi.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <share.h>
 
 #ifndef _HOTKEYS_H_
 typedef struct
@@ -44,6 +48,7 @@ BOOL shared_mem_struct_free (LPVOID, HANDLE);
 #endif
 
 void debug_output (LPCTSTR);
+void debug_output_ex (LPCTSTR, ...);
 
 LPBYTE reg_get_value (LPCTSTR, LPDWORD, const LPDWORD, HKEY, LPTSTR);
 BOOL reg_set_value (LPTSTR, LPVOID, DWORD, DWORD, HKEY, LPTSTR, BOOL, BOOL);

@@ -38,7 +38,7 @@ static SIAYNOQHOTKEY hotkeys[] = {
   { MOD_WIN | MOD_CONTROL,	VK_F10,		logoff_user,			{ 0 }, },
   { MOD_WIN | MOD_CONTROL,	VK_F11,		load_hooks_dll,			{ 0 }, },
   { MOD_WIN | MOD_ALT,		VK_F11,		unload_hooks_dll,		{ 0 }, },
-  { MOD_WIN,			VK_SPACE,	put_focused_window_on_track,	{ 0 }, },
+  { MOD_WIN,			VK_RETURN,	put_focused_window_on_track,	{ 0 }, },
   { MOD_WIN | MOD_CONTROL,	VK_RETURN,	zoom_focused_window,		{ 0 }, },
 };
 #endif /* _HOTKEYS_H_ */
@@ -68,6 +68,11 @@ static TILING_RULE tiling_rules[] = {
   { "#32771",			FALSE }, /* Window's `CoolSwitch' */
   { "ConsoleWindowClass",	FALSE }, /* Window's command shell */
   { "Shell_TrayWnd",		FALSE }, /* Window's notification area */
+  { "ROCKETDOCK",		FALSE }, /* RocketDock main window */
+  { "RDBlankWnd",		FALSE }, /* from RocketDock, but I don't know what this does */
+  { "RDIconWnd",		FALSE }, /* RocketDock icons */
+  { "RDTitleWnd",		FALSE }, /* RocketDock title/icon caption */
+  { "WorkerW",			FALSE }, /* some sort of auxillary window for RocketDock */
   { "",				FALSE },
   { NULL,			FALSE },
 };

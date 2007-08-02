@@ -1,3 +1,61 @@
+2007-08-02  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/config.h (hotkeys): Changed default hotkey for maximizing a
+	window.
+	(tiling_rules): Added exception rules for RocketDock.
+
+	* src/siaynoq.c (siaynoq_init): Replaced all expressions
+	whose (boolean) return values are checked in debug builds to store
+	the retvals in a variable separate from the eventual value of the
+	function itself.
+	(siaynoq_resize_work_area): Removed temporary variables fold
+	screen's width and height, and added code to tell Windows to hide
+	the titlebars of minimized windows.
+	(siaynoq_adjust_work_area): Renamed from
+	siaynoq_resize_work_area() to reflect added functionality.
+
+2007-07-29  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/siaynoq.c (siaynoq_msg_handler_wm_paint): Added explicit
+	casts to parameters to calls to GetTextExtentPoint32().
+
+	* src/main.c (WinMain): Added explicit cast to PostQuitMessage()'s
+	WPARAM return value.
+
+	* src/tools.c (debug_output_ex): Changed fopen() to _fsopen() and
+	added #pragma to disable MSVC's warning for the use of
+	vsnprintf() (MinGW doesn't support vsnprintf_s() yet).
+	(system_spawn): Added #pragma to temporarily disable MSVC's
+	type-casting warning when calling ShellExecute().
+
+	* src/SConstruct: Removed provision for the -ansi flag to GCC (see
+	2007-07-21 changes); it's not like MSVC actually *supports* ANSI-C
+	strictly.
+	Added -pedantic and -Wno-unknown-pragmas to compiler flags for
+	stricter checking and to stop GCC from trying to parse #pragmas
+	for MSVC (respectively).
+
+	* src/tiling.c (siaynoq_set_wnd_handle_on_track): Replaced ad-hoc
+	arbitrary logging to use new debug_output_ex().
+	(siaynoq_tile_non_focused_wnd_walker): Likewise.
+
+2007-07-28  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/siaynoq.c (siaynoq_msg_handler_wm_paint): Set flag for
+	whether time/date string is dynamic to FALSE if strftime() fails.
+
+2007-07-28  Tuncer Ayaz  <tuncer.ayaz@gmail.com>
+
+	* src/siaynoq.c (siaynoq_msg_handler_wm_paint): Corrected meaning
+	of ctd_str_is_dynamic and adjust all dependent blocks accordingly.
+	Replaced ad-hoc arbitrary logging to use new debug_output_ex().
+
+	* src/hooks.c (siaynoq_hook_shellproc): Replaced ad-hoc arbitrary
+	logging to use new debug_output_ex().
+
+	* src/tools.c (debug_output_ex): New variadic function.
+	(debug_output): Changed to use debug_output_ex() internally.
+
 2007-07-22  Neil Santos  <neil_santos@users.sourceforge.net>
 
 	* src/config.h (tiling_rules): Added rule for Window's CoolSwitch;

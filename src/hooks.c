@@ -91,16 +91,9 @@ siaynoq_hook_shellproc (int code, WPARAM wParam, LPARAM lParam)
   if (0 <= code)
     {
       debug_output ("@@@ Here we go...");
-      if (DEBUG)
-        {
-          FILE *fp;
-          fp = fopen ("d:\\siaynoq.log", "a");
-          fprintf (fp, "--- %u shellproc code\n", code);
-          fprintf (fp, "--- %u HSHELL_WINDOWACTIVATED\n", HSHELL_WINDOWACTIVATED);
-          fprintf (fp, "--- %u HSHELL_WINDOWDESTROYED\n", HSHELL_WINDOWDESTROYED);
-          fflush (fp);
-          fclose (fp);
-        }
+      debug_output_ex ("--- %u shellproc code\n", code);
+      debug_output_ex ("--- %u HSHELL_WINDOWACTIVATED\n", HSHELL_WINDOWACTIVATED);
+      debug_output_ex ("--- %u HSHELL_WINDOWDESTROYED\n", HSHELL_WINDOWDESTROYED);
 
       if (HSHELL_WINDOWACTIVATED == code)
         {

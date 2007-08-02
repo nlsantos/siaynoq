@@ -49,7 +49,7 @@ WinMain (HINSTANCE instance, HINSTANCE prev, LPTSTR cmd_line, int cmd_show)
     {
       MSG msg;
 
-      CreateThread (NULL, 0, siaynoq_run_startup_items, NULL, 0, NULL);
+/*       CreateThread (NULL, 0, siaynoq_run_startup_items, NULL, 0, NULL); */
 
       while (GetMessage (&msg, NULL, 0, 0) > 0)
         {
@@ -60,7 +60,7 @@ WinMain (HINSTANCE instance, HINSTANCE prev, LPTSTR cmd_line, int cmd_show)
       if (!(ReleaseMutex (mutex)))
         debug_output ("!!! Failed in releasing singularity mutex");
 
-      return msg.wParam;
+      return (int) msg.wParam;
     }
 
   return 255;

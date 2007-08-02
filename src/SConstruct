@@ -6,7 +6,7 @@ opts.Add (BoolOption ('debug', 'Set to 1 to build with debugging symbols', 0))
 opts.Add (BoolOption ('profile', 'Set to 1 to build with profiling support', 0))
 
 env = Environment (options = opts,
-                   CCFLAGS = '-Wall',
+                   CCFLAGS = '-pedantic -Wall -Wno-unknown-pragmas',
                    LINKFLAGS = '-mwindows',
                    PLATFORM = 'cygwin',
                    CPPPATH = ['d:/usr/local/include'],
@@ -21,7 +21,6 @@ env = Environment (options = opts,
 
 build_with_debug = ARGUMENTS.get ('debug', 0)
 build_with_profile = ARGUMENTS.get ('profile', 0)
-cuddle_msvc = ARGUMENTS.get ('ansi', 1)
 gcc_strict = ARGUMENTS.get ('strict', 0)
 
 if int (build_with_debug):
@@ -32,9 +31,6 @@ if int (build_with_profile):
     env.Replace (CCFLAGS = env['CCFLAGS'] + ' -pg')
     env.Replace (LINKFLAGS = env['LINKFLAGS'] + ' -pg')
     env.Replace (LIBS = env['LIBS'] + ['gmon'])
-
-if int (cuddle_msvc):
-    env.Replace (CCFLAGS = env['CCFLAGS'] + ' -ansi')
 
 if int (gcc_strict):
     env.Replace (CCFLAGS = env['CCFLAGS'] + ' -Werror')

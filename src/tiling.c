@@ -156,8 +156,6 @@ siaynoq_set_wnd_handle_on_track (HWND target_wnd,
                                  BOOL target_is_new,
                                  LPCREATESTRUCT reserved)
 {
-  FILE *fp; /* DEBUG */
-
   HWND retval;
   UINT num_tiled_windows;
   RECT dimensions;
@@ -174,18 +172,10 @@ siaynoq_set_wnd_handle_on_track (HWND target_wnd,
     return siaynoq_prev_maximized_wnd_handle;
 
   retval = siaynoq_curr_maximized_wnd_handle;
-
   siaynoq_curr_maximized_wnd_handle = target_wnd;
-
   num_tiled_windows = siaynoq_tile_non_focused_wnd ();
 
-  if (DEBUG)
-    {
-      fp = fopen ("d:\\siaynoq.log", "a");
-      fprintf (fp, "--- %u tileable windows found\n", num_tiled_windows);
-      fflush (fp);
-      fclose (fp);
-    }
+  debug_output_ex ("--- %u tileable windows found\n", num_tiled_windows);
 
   siaynoq_tiled_inactive_uses_max_height = (num_tiled_windows <= 1);
   siaynoq_wnd_on_track_uses_max_space = (0 == num_tiled_windows);
@@ -227,7 +217,10 @@ siaynoq_calc_wnd_on_track_dimension ()
   if (!siaynoq_wnd_on_track_uses_max_space)
     {
       debug_output ("::: using max_track_width");
-      retval.right *= (MAX_TRACK_WIDTH / 100.0);
+      /* should be `retval.right *= (MAX_TRACK_WIDTH / 100.0);' but MSVC
+         is too stupid to be able to figure out how to do implicit
+         type-casting in this case */
+      retval.right = (LONG) (retval.right * (MAX_TRACK_WIDTH / 100.0));
     }
 
   return retval;
@@ -270,7 +263,6 @@ siaynoq_tile_non_focused_wnd_walker (HWND current_wnd, LPARAM scr_info)
   /* DEBUG */
   LPTSTR wnd_title;
   int len_title;
-  FILE *fp;
   /* -DEBUG */
 
   WORD x_start_coord, y_tile_inc;
@@ -291,12 +283,8 @@ siaynoq_tile_non_focused_wnd_walker (HWND current_wnd, LPARAM scr_info)
       if (NULL != wnd_title)
         {
           GetWindowText (current_wnd, wnd_title, len_title);
-
-          fp = fopen ("d:\\siaynoq.log", "a");
-          fprintf (fp, "+++ tiling: %s at_x: %u\n", wnd_title, (siaynoq_tileable_wnd_count * y_tile_inc));
-          fflush (fp);
-          fclose (fp);
-
+          debug_output_ex ("+++ tiling: %s at_x: %u\n", wnd_title,
+                           (siaynoq_tileable_wnd_count * y_tile_inc));
           debug_output (wnd_title);
         }
       free (wnd_title);
@@ -308,7 +296,7 @@ siaynoq_tile_non_focused_wnd_walker (HWND current_wnd, LPARAM scr_info)
   wnd_height = work_area.bottom - work_area.top;
 
   if (!siaynoq_tiled_inactive_uses_max_height)
-    wnd_height /= siaynoq_non_focused_height_divisor;
+    wnd_height = (UINT) (wnd_height / siaynoq_non_focused_height_divisor);
 
   siaynoq_tileable_wnd_count--;
   MoveWindow (current_wnd,
@@ -339,8 +327,8 @@ siaynoq_tile_non_focused_wnd ()
 
   SystemParametersInfo (SPI_GETWORKAREA, 0, &work_area, 0);
 
-  y_tile_inc = ((work_area.bottom - work_area.top) / (siaynoq_tileable_wnd_count * 1.0));
-  max_wnd_width = (work_area.right * (MAX_TRACK_WIDTH / 100.0));
+  y_tile_inc = (WORD) ((work_area.bottom - work_area.top) / (siaynoq_tileable_wnd_count * 1.0));
+  max_wnd_width = (WORD) (work_area.right * (MAX_TRACK_WIDTH / 100.0));
 
   assert (10 <= MAX_TRACK_WIDTH);
   assert (0 < max_wnd_width);
@@ -348,7 +336,7 @@ siaynoq_tile_non_focused_wnd ()
   siaynoq_active_window_count = 0;
 
   debug_output ("::: tiling active but unfocused windows");
-  siaynoq_non_focused_height_divisor = (siaynoq_tileable_wnd_count * 1.0);
+  siaynoq_non_focused_height_divisor = (FLOAT) (siaynoq_tileable_wnd_count * 1.0);
   EnumWindows (siaynoq_tile_non_focused_wnd_walker, MAKELPARAM (y_tile_inc, max_wnd_width));
   debug_output ("::: done tiling active but unfocused windows");
 

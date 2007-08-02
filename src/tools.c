@@ -20,16 +20,52 @@
 #include "tools.h"
 #include "config.h"
 
+static const LPTSTR DEFAULT_LOGPATH = "d:\\siaynoq.log";
+static LPCTSTR LOGPATH_ENV_NAME = "%SIAYNOQ_LOGPATH%";
+
 void
 debug_output (LPCTSTR msg)
+{
+  debug_output_ex ("%s", msg);
+}
+
+
+void
+debug_output_ex (LPCTSTR format, ...)
 {
   if (DEBUG)
     {
       FILE *fp;
-      fp = fopen ("d:\\siaynoq.log", "a");
-      fprintf (fp, "%s\n", msg);
-      fflush (fp);
-      fclose (fp);
+      LPTSTR log_path;
+      TCHAR msg[1024];
+      va_list va_args;
+
+      log_path = malloc (sizeof (TCHAR) * (MAX_PATH + 1));
+      if (NULL != log_path)
+        {
+          ExpandEnvironmentStrings (LOGPATH_ENV_NAME, log_path, MAX_PATH);
+          if (!(_tcslen (log_path))
+              || (0 == (lstrcmp (log_path, LOGPATH_ENV_NAME))))
+            log_path = DEFAULT_LOGPATH;
+
+          fp = _fsopen (log_path, "a", _SH_DENYWR);
+          if (NULL != fp)
+            {
+              memset (msg, 0, sizeof (msg));
+              va_start (va_args, format);
+/* MinGW doesn't support vsnprintf_s() yet */
+#pragma warning(push)
+#pragma warning(disable:4996)
+              vsnprintf (msg, sizeof (msg), format, va_args);
+#pragma warning(pop)
+
+              fprintf (fp, "%s\n", msg);
+              fflush (fp);
+              fclose (fp);
+            }
+
+          free (log_path);
+        }
     }
 }
 
@@ -97,8 +133,8 @@ shared_mem_struct_init (HANDLE file_mapping_obj, LPCTSTR file_map_name, const si
   file_mapping_obj = CreateFileMapping (INVALID_HANDLE_VALUE,
                                         NULL,
                                         PAGE_READWRITE,
-                                        0,
-                                        struct_size,
+                                        (DWORD) 0,
+                                        (DWORD) struct_size,
                                         file_map_name);
 
   init_shared_mem = (GetLastError () != ERROR_ALREADY_EXISTS);
@@ -277,15 +313,12 @@ reg_set_value (LPTSTR value_name, LPVOID data, DWORD size, DWORD reg_type,
 DWORD
 reg_get_value_info (HKEY reg_key, LPDWORD max_name_len, LPDWORD max_value_len)
 {
-  LPDWORD value_count;
+  LPDWORD value_count = NULL;
 
   if (ERROR_SUCCESS != RegQueryInfoKey(reg_key, NULL, NULL, NULL, NULL, NULL, NULL,
                                        value_count, max_name_len, max_value_len,
                                        NULL, NULL))
-    {
-      debug_output ("!!! Error while querying key for info");
-      value_count = NULL;
-    }
+    debug_output ("!!! Error while querying key for info");
 
   return *value_count;
 }
@@ -317,8 +350,11 @@ system_spawn (LPTSTR cmd_line, LPCTSTR params, LPCTSTR curr_dir,
 
   if (use_shell)
     { /* Quick note: ShellExecute() returns  32 or lower on failure */
+#pragma warning(push)
+#pragma warning(disable:4311) /* Can't do anything *but* cast this */
       retval = (int) ShellExecute (NULL, action, cmd_line, params,
                                    curr_dir, SW_SHOWDEFAULT);
+#pragma warning(pop)
       if (32 >= retval)
         debug_output ("!!! system_spawn() failed while using ShellExecute()");
     }

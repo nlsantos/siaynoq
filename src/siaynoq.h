@@ -70,6 +70,8 @@ HWND siaynoq_wnd_create_statusbar (HINSTANCE, ATOM);
  */
 LRESULT CALLBACK siaynoq_wnd_proc_statusbar (HWND, UINT, WPARAM, LPARAM);
 
+HWND siaynoq_find_next_tiling_candidate(HWND[]);
+
 /* Message-handling functions */
 LRESULT siaynoq_msg_handler_sy_windowdestroyed (HWND, WPARAM, LPARAM);
 LRESULT siaynoq_msg_handler_wm_paint (HWND, WPARAM, LPARAM);

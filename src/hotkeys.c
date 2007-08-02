@@ -108,7 +108,7 @@ siaynoq_hotkeys_init (HWND main_wnd_handle, HANDLE hook_lib_handle)
               else if (!(RegisterHotKey (main_wnd_handle, hotkey_atom, hotkey.mod, hotkey.keycode)))
                 {
                   retval &= FALSE;
-                  debug_output ("RegisterHotKey() failed");
+                  debug_output_ex ("RegisterHotKey() failed: %s :: %u", func_name, hotkey.keycode);
                 }
             }
           else

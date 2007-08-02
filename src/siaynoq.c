@@ -65,6 +65,7 @@ BOOL
 siaynoq_init (HINSTANCE instance)
 {
   BOOL retval;
+  BOOL last_stat;
   ATOM wnd_class_atom;
 
   retval = TRUE;
@@ -99,21 +100,24 @@ siaynoq_init (HINSTANCE instance)
     }
 
   SY_WINDOWACTIVATED = RegisterWindowMessage (SIAYNOQ_MSG_APP_FOCUS_CHANGE);
-  retval &= (0 != SY_WINDOWACTIVATED);
+  last_stat = (0 != SY_WINDOWACTIVATED);
+  retval &= last_stat;
 
-  if (!retval)
+  if (!last_stat)
     debug_output ("!!! RegisterWindowMessage() returned 0 for SY_WINDOWACTIVATED");
 
   SY_WINDOWDESTROYED = RegisterWindowMessage (SIAYNOQ_MSG_APP_LOSING_WINDOW);
-  retval &= (0 != SY_WINDOWDESTROYED);
+  last_stat = (0 != SY_WINDOWDESTROYED);
+  retval &= last_stat;
 
-  if (!retval)
+  if (!last_stat)
     debug_output ("!!! RegisterWindowMessage() returned 0 for SY_WINDOWACTIVATED");
 
   if (DEBUG)
     assert (retval);
 
-  /* Tile foreground window immediately */
+  /* Tile foreground window immediately; if foreground window isn't
+     tileable, find one that is. */
   if (retval)
     put_focused_window_on_track (SIAYNOQ_IGNORED_HOTKEY_ARG);
 
@@ -142,18 +146,23 @@ siaynoq_free ()
 
 
 void
-siaynoq_resize_work_area ()
+siaynoq_adjust_work_area ()
 {
   RECT work_area;
-  UINT screen_width, screen_height;
+  MINIMIZEDMETRICS min_metrics;
 
-  screen_width = GetSystemMetrics (SM_CXSCREEN);
-  screen_height = GetSystemMetrics (SM_CYSCREEN);
+  /* Hide title bars of minimized windows */
+  min_metrics.cbSize = sizeof (MINIMIZEDMETRICS);
+  SystemParametersInfo (SPI_GETMINIMIZEDMETRICS, min_metrics.cbSize,
+                        &min_metrics, 0);
+  min_metrics.iArrange |= ARW_HIDE;
+  SystemParametersInfo (SPI_SETMINIMIZEDMETRICS, min_metrics.cbSize,
+                        &min_metrics, 0);
 
   work_area.left = 0;
   work_area.top = siaynoq_statusbar_height;
-  work_area.right = screen_width;
-  work_area.bottom = screen_height;
+  work_area.right = GetSystemMetrics (SM_CXSCREEN);
+  work_area.bottom = GetSystemMetrics (SM_CYSCREEN);
 
   SystemParametersInfo (SPI_SETWORKAREA, 0, &work_area, 0);
 }
@@ -253,7 +262,8 @@ siaynoq_run_reg_startup_items ()
                 if (ERROR_SUCCESS != (RegEnumValue (open_reg_key, value_idx,
                                                     value_name, &len_value_name,
                                                     NULL, NULL,
-                                                    value_data, &len_value_data)))
+                                                    (LPBYTE) value_data,
+                                                    &len_value_data)))
                   {
                     debug_output ("!!! RegEnumValue() failed");
                     continue;
@@ -360,7 +370,7 @@ siaynoq_wnd_create_statusbar (HINSTANCE instance, ATOM class_atom)
       SetWindowPos (wnd_handle, HWND_TOP, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE);
       ShowWindow (wnd_handle, SW_SHOWNOACTIVATE);
 
-      siaynoq_resize_work_area ();
+      siaynoq_adjust_work_area ();
 
       /* Register timer for time/date display updates */
       if (0 == siaynoq_time_date_display_timer)
@@ -395,7 +405,7 @@ siaynoq_wnd_proc_statusbar (HWND wnd_handle, UINT message, WPARAM wParam, LPARAM
     {
       debug_output ("@@@ System-wide status change");
       debug_output ("@@@ Resizing work area");
-      siaynoq_resize_work_area ();
+      siaynoq_adjust_work_area ();
       debug_output ("@@@ Retiling windows");
       siaynoq_set_wnd_handle_on_track (siaynoq_curr_maximized_wnd_handle,
                                        FALSE,
@@ -468,15 +478,7 @@ siaynoq_wnd_proc_statusbar (HWND wnd_handle, UINT message, WPARAM wParam, LPARAM
                                    TRUE,
                                    TRUE))))
             debug_output ("!!! Failed to write program count to registry");
-
-          if (DEBUG)
-            {
-              FILE *fp;
-              fp = fopen ("d:\\siaynoq.log", "a");
-              fprintf (fp, "--- %u active windows found\n", siaynoq_active_window_count);
-              fflush (fp);
-              fclose (fp);
-            }
+          debug_output_ex ("--- %u active windows found\n", siaynoq_active_window_count);
         }
     }
   else if (WM_CLOSE == message)
@@ -528,6 +530,32 @@ siaynoq_wnd_proc_statusbar (HWND wnd_handle, UINT message, WPARAM wParam, LPARAM
     return DefWindowProc (wnd_handle, message, wParam, lParam);
 
   return 0;
+}
+
+
+HWND
+siaynoq_find_next_tiling_candidate(HWND target_hwnds[])
+{
+  HWND retval = NULL;
+  UINT target_hwnds_num;
+  UINT target_hwnd_idx = 0;
+
+  if (NULL == target_hwnds)
+    {
+      target_hwnds[0] = siaynoq_next_maximized_wnd_handle;
+      target_hwnds[1] = siaynoq_prev_maximized_wnd_handle;
+    }
+  target_hwnds_num = sizeof (target_hwnds) / sizeof (HWND);
+
+  for (; target_hwnd_idx < target_hwnds_num; target_hwnd_idx++)
+    {
+      if ((NULL == target_hwnds[target_hwnd_idx])
+          ||  !(IsWindow (target_hwnds[target_hwnd_idx])))
+        continue;
+      retval = target_hwnds[target_hwnd_idx];
+    }
+
+  return retval;
 }
 
 
@@ -590,40 +618,62 @@ siaynoq_msg_handler_sy_windowdestroyed (HWND wnd_handle, WPARAM wParam,
   /* The tracked window is closing; need to find a replacement */
   if (closing_wnd == siaynoq_main_wnd_handle)
     {
+      /* Priority is the next-in-line */
       if ((NULL != siaynoq_next_maximized_wnd_handle)
           && IsWindow (siaynoq_next_maximized_wnd_handle))
-        { /* Bingo. */
-          siaynoq_set_wnd_handle_on_track (siaynoq_next_maximized_wnd_handle,
-                                           FALSE, NULL);
-          /* Need to find an heir to the throne afterwards */
+        {
+          possible_main_wnd = siaynoq_next_maximized_wnd_handle;
+          /* NULL it since after the next-in-line has been maximized, it
+             should no longer be a candidate */
           siaynoq_next_maximized_wnd_handle = NULL;
         }
-
-      /* The only times siaynoq_prev_maximized_wnd_handle should be NULL
-         is if the main window just closed, or there's one or no visible, tileable window. */
-      if (NULL == siaynoq_prev_maximized_wnd_handle)
+      else /* No next-in-line */
         {
-          debug_output ("::: No window tagged as next-in-line");
-
-          /* Got to find a suitable candidate */
-          possible_main_wnd = GetWindow (closing_wnd, GW_HWNDNEXT);
-          if (NULL != possible_main_wnd)
+          /* Try the last maximized window */
+          if ((NULL != siaynoq_prev_maximized_wnd_handle)
+              && IsWindow (siaynoq_prev_maximized_wnd_handle))
             {
-              while ((NULL != possible_main_wnd) &&
-                     (!(siaynoq_is_target_wnd_tileable (possible_main_wnd))))
-                {
-                  debug_output ("!!! GetWindow() returned a non-tileable window handle; trying for another one");
-                  possible_main_wnd = GetWindow (possible_main_wnd, GW_HWNDNEXT);
-                }
-
-              if (NULL != possible_main_wnd)
-                siaynoq_prev_maximized_wnd_handle = possible_main_wnd;
-              else
-                debug_output ("!!! Done with GetWindow() but didn't get a tileable window; shell left with inconsistent internal state");
+              possible_main_wnd = siaynoq_prev_maximized_wnd_handle;
+              /* NULL it since after the last maximized window has been
+                 maximized, it should no longer be a candidate */
+              siaynoq_prev_maximized_wnd_handle = NULL;
             }
+
+          /* Normally, we'd be done by now.  The only times
+             siaynoq_prev_maximized_wnd_handle should be NULL is if the
+             main window just closed, or there's one or no visible,
+             tileable window. */
+
+          /* WTF?!  Still nothing? */
           else
-            debug_output ("!!! GetWindow() returned NULL on first try");
+            {
+              debug_output ("::: No window tagged as next-in-line");
+
+              /* Got to find a suitable candidate */
+              possible_main_wnd = GetWindow (closing_wnd, GW_HWNDNEXT);
+              if (NULL != possible_main_wnd)
+                {
+                  while ((NULL != possible_main_wnd) &&
+                         (!(siaynoq_is_target_wnd_tileable (possible_main_wnd))))
+                    {
+                      debug_output ("!!! GetWindow() returned a non-tileable window handle; trying for another one");
+                      possible_main_wnd = GetWindow (possible_main_wnd, GW_HWNDNEXT);
+                    }
+
+                  if (NULL != possible_main_wnd)
+                    siaynoq_prev_maximized_wnd_handle = possible_main_wnd;
+                  else
+                    debug_output ("!!! Done with GetWindow() but didn't get a tileable window; shell left with inconsistent internal state");
+                }
+              else
+                debug_output ("!!! GetWindow() returned NULL on first try");
+            }
         }
+        
+      /* Bingo. */
+      if ((NULL != possible_main_wnd)
+          && IsWindow (possible_main_wnd))
+        siaynoq_set_wnd_handle_on_track (possible_main_wnd, FALSE, NULL);
     }
   else /* Re-tile the whole bunch */
     siaynoq_tile_non_focused_wnd ();
@@ -749,7 +799,7 @@ siaynoq_msg_handler_wm_paint (HWND wnd_handle, WPARAM wParam, LPARAM lParam)
 
   SetTextColor (layout_dc, COLOR_FG_LABEL);
   GetTextExtentPoint32 (layout_dc, layout_symbol,
-                        strlen (layout_symbol) + 1, &text_size);
+                        (int) (strlen (layout_symbol) + 1), &text_size);
 
   coords_layout.left = 0;
   coords_layout.top = 0;
@@ -785,17 +835,15 @@ siaynoq_msg_handler_wm_paint (HWND wnd_handle, WPARAM wParam, LPARAM lParam)
 
   /* Try to get some time/date string for display */
   curr_time_date_str = malloc (sizeof (TCHAR) * 255); /* Is 255 chars enough? */
-  ctd_str_is_dynamic = (NULL == curr_time_date_str);
+  ctd_str_is_dynamic = (NULL != curr_time_date_str);
 
-  if (!ctd_str_is_dynamic)
-    {
-      debug_output ("!!! couldn't malloc() memory for current time/date display");
-      curr_time_date_str = "siaynoq !!! time/date string malloc() failed";
-    }
-  else
+  if (ctd_str_is_dynamic)
     {
       time (&curr_sys_time_value);
+#pragma warning(push)
+#pragma warning(disable:4996) /* MinGW doesn't support localtime_s() yet */
       time_struct = localtime (&curr_sys_time_value);
+#pragma warning(pop)
 
       if (NULL == time_struct)
         debug_output ("!!! localtime() returned non-zero");
@@ -805,12 +853,19 @@ siaynoq_msg_handler_wm_paint (HWND wnd_handle, WPARAM wParam, LPARAM lParam)
           {
             debug_output ("!!! strftime() returned 0; maybe the buffer's not long enough?");
             free (curr_time_date_str);
+
+            ctd_str_is_dynamic = FALSE;
             curr_time_date_str = "siaynoq !!! try adjusting the buffer for the time/date";
           }
-    } /* if (!ctd_str_is_dynamic) */
+    }
+  else
+    {
+      debug_output ("!!! couldn't malloc() memory for current time/date display");
+      curr_time_date_str = "siaynoq !!! time/date string malloc() failed";
+    } /* if (ctd_str_is_dynamic) */
 
   GetTextExtentPoint32 (time_date_dc, curr_time_date_str,
-                        strlen (curr_time_date_str) + 1, &text_size);
+                        (int) strlen (curr_time_date_str) + 1, &text_size);
   coords_time_date.left = 0;
   coords_time_date.top = 0;
   coords_time_date.right = text_size.cx;
@@ -821,7 +876,7 @@ siaynoq_msg_handler_wm_paint (HWND wnd_handle, WPARAM wParam, LPARAM lParam)
   DrawText (time_date_dc, curr_time_date_str, -1, &coords_time_date,
             DT_CENTER | DT_VCENTER | DT_NOCLIP | DT_NOPREFIX | DT_SINGLELINE);
   /* ... do a bit of clean up ... */
-  if (!ctd_str_is_dynamic)
+  if (ctd_str_is_dynamic)
     free (curr_time_date_str);
   /* ... and then we transfer it to the status bar */
   BitBlt (buf_dc, (coords_bar.right - coords_time_date.right), 0,
