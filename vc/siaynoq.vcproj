@@ -205,11 +205,19 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\src\drawing.c"
+				>
+			</File>
+			<File
 				RelativePath="..\src\hotkeys.c"
 				>
 			</File>
 			<File
 				RelativePath="..\src\main.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\notif_area.c"
 				>
 			</File>
 			<File

@@ -1,3 +1,32 @@
+2007-08-07  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/notif_area.c, src/notif_area.h: Support for notification
+	area.  Contains only preliminary functions to get such support
+	going.
+
+	* src/config.h: Added macro considerations for the drawing
+	functions for GUI constants.
+	(TIME_DATE_FORMAT): Changed default time/date string format.
+	(FONT_NAME, FONT_SIZE): Changed default font name and size.
+	(USE_CLEAR_TYPE): Added flag to denote whether or not to use
+	ClearType by default.
+	(CLEARTYPE_QUALITY, CLEARTYPE_NATURAL_QUALITY): Manually included
+	#defines normally found windows.h for the benefit of MinGW.
+
+	* src/SConstruct: Added notif_area.{ch} to source list, as well as
+	requirement for the ole32 library.
+
+2007-08-03  Neil Santos  <neil_santos@users.sourceforge.net>
+
+	* src/drawing.c (siaynoq_draw_component_time_date): New function
+	to draw time/date string to status bar.
+	(siaynoq_draw_component_wnd_title): New function to draw maximized
+	window's title to status bar.
+
+	* src/siaynoq.c (siaynoq_msg_handler_wm_paint): Moved code to draw
+	time/date string and maximized window's title to their seperate
+	functions.
+
 2007-08-02  Neil Santos  <neil_santos@users.sourceforge.net>
 
 	* src/config.h (hotkeys): Changed default hotkey for maximizing a

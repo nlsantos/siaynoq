@@ -28,7 +28,7 @@
 #  define _DEBUG 0
 #endif
 
-#define MAX_TRACK_WIDTH 60 /* percent; (arbitrary) minimum is 10 */
+#define MAX_TRACK_WIDTH 75 /* percent; (arbitrary) minimum is 10 */
 
 #ifdef _HOTKEYS_H_
 static SIAYNOQHOTKEY hotkeys[] = {
@@ -45,12 +45,13 @@ static SIAYNOQHOTKEY hotkeys[] = {
 
 #define MAIN_MOD_KEY VK_LWIN
 
-#ifdef _SIAYNOQ_H_
+#if defined (_SIAYNOQ_H_) || defined (_DRAWING_H_)
 static const UINT TIMEOUT_WINDOW_ACTIVATE = 500; /* in ms */
-static const LPTSTR TIME_DATE_FORMAT = "%a %d %b %H:%M:%S";
+static const LPTSTR TIME_DATE_FORMAT = "[%a] %d %b, %Y [%H:%M]";
 
-static const LPTSTR FONT_NAME = "Verdana";
-static const UINT FONT_SIZE = 14;
+static const LPTSTR FONT_NAME = "Consolas";
+static const UINT FONT_SIZE = 16;
+static const BOOL USE_CLEAR_TYPE = TRUE;
 
 static const LPTSTR LAYOUT_FLOAT = "><>";
 static const LPTSTR LAYOUT_TILE = "[]=";
@@ -59,7 +60,7 @@ static const COLORREF COLOR_BG_NORM = RGB (150, 150, 150);
 static const COLORREF COLOR_FG_NORM = RGB (0, 0, 0);
 static const COLORREF COLOR_BG_LABEL = RGB (0, 0, 0);
 static const COLORREF COLOR_FG_LABEL = RGB (255, 255, 255);
-#endif /* _SIAYNOQ_H_ */
+#endif /* defined (_SIAYNOQ_H_) || defined (_DRAWING_H_) */
 
 #ifdef _TILING_H_
 static TILING_RULE tiling_rules[] = {
@@ -77,5 +78,12 @@ static TILING_RULE tiling_rules[] = {
   { NULL,			FALSE },
 };
 #endif /* _TILING_H_ */
+
+#if (_WIN32_WINNT >= 0x0500)
+#  define CLEARTYPE_QUALITY 5
+#endif
+#if (_WIN32_WINNT >= 0x0501)
+#  define CLEARTYPE_NATURAL_QUALITY 6
+#endif
 
 #endif /* _CONFIG_H_ */

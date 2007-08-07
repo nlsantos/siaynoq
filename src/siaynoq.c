@@ -17,10 +17,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
  * USA
  ***/
-#include <time.h>
-
 #include "siaynoq.h"
 #include "config.h"
+#include "drawing.h"
 #include "tiling.h"
 #include "tools.h"
 #include "hotkeys.h"
@@ -699,8 +698,8 @@ siaynoq_msg_handler_wm_paint (HWND wnd_handle, WPARAM wParam, LPARAM lParam)
 
   RECT coords_bar; /* The status bar coordinates */
   /* RECTs needed for laying out the various components of the bar */
-  RECT coords_layout;
   RECT coords_time_date;
+  RECT coords_layout;
   RECT coords_title;
 
   SIZE text_size; /* Used with GetTextExtentPoint32() */
@@ -714,39 +713,18 @@ siaynoq_msg_handler_wm_paint (HWND wnd_handle, WPARAM wParam, LPARAM lParam)
   HDC main_dc;
   HDC buf_dc; /* Buffer DC for painting */
   HDC layout_dc; /* layout symbol display */
-  HDC time_date_dc; /* time/date display */
-  HDC title_dc; /* active window title display */
 
   /* Buffer bitmap handles */
   HBITMAP buf_bmp; /* main buffer DC */
   HBITMAP layout_bmp; /* layout symbol */
-  HBITMAP time_date_bmp; /* time/date display */
-  HBITMAP title_bmp; /* active window's title */
 
   /* Old bitmap handles assigned to created DCs */
   HBITMAP old_bmp; /* main buffer DC */
   HBITMAP old_layout_bmp; /* layout symbol */
-  HBITMAP old_time_date_bmp; /* time/date display */
-  HBITMAP old_title_bmp; /* active window's title */
 
   /* Font handles */
   HFONT font_handle;
   HFONT old_layout_font; /* The old font assigned to the layout DC */
-  HFONT old_time_date_font; /* Old font assigned to time/date DC */
-  HFONT old_title_font; /* Old font assigned to titel DC */
-
-  /* For time/date component */
-  LPTSTR curr_time_date_str;
-  time_t curr_sys_time_value;
-  struct tm *time_struct;
-  /* TRUE if curr_time_date_str was successfully malloc()'d */
-  BOOL ctd_str_is_dynamic;
-
-  /* For window title display */
-  HWND handle_active_wnd;
-  UINT len_active_wnd_title;
-  /* the string that'll be painted on the status bar */
-  LPTSTR wnd_title_display;
 
   /* All set; let's rock! */
   main_dc = BeginPaint (wnd_handle, &paint);
@@ -758,10 +736,9 @@ siaynoq_msg_handler_wm_paint (HWND wnd_handle, WPARAM wParam, LPARAM lParam)
                             DEFAULT_CHARSET,
                             OUT_DEFAULT_PRECIS,
                             CLIP_DEFAULT_PRECIS,
-                            DEFAULT_QUALITY,
+                            ((USE_CLEAR_TYPE) ? CLEARTYPE_QUALITY : DEFAULT_QUALITY),
                             DEFAULT_PITCH,
                             FONT_NAME);
-
   if (NULL == font_handle)
     { /* Can't find the font specified; need to fallback.  */
       debug_output ("!!! Couldn't find specified font");
@@ -823,136 +800,19 @@ siaynoq_msg_handler_wm_paint (HWND wnd_handle, WPARAM wParam, LPARAM lParam)
 
 
   /* Draw time/date component */
-  time_date_dc = CreateCompatibleDC (NULL);
-  old_time_date_font = (HFONT) SelectObject (time_date_dc, font_handle);
-  SetBkMode (time_date_dc, TRANSPARENT);
-
-  time_date_bmp = CreateCompatibleBitmap (time_date_dc, coords_bar.right,
-                                          coords_bar.bottom);
-  old_time_date_bmp = (HBITMAP) SelectObject (time_date_dc, time_date_bmp);
-
-  SetTextColor (time_date_dc, COLOR_FG_LABEL);
-
-  /* Try to get some time/date string for display */
-  curr_time_date_str = malloc (sizeof (TCHAR) * 255); /* Is 255 chars enough? */
-  ctd_str_is_dynamic = (NULL != curr_time_date_str);
-
-  if (ctd_str_is_dynamic)
-    {
-      time (&curr_sys_time_value);
-#pragma warning(push)
-#pragma warning(disable:4996) /* MinGW doesn't support localtime_s() yet */
-      time_struct = localtime (&curr_sys_time_value);
-#pragma warning(pop)
-
-      if (NULL == time_struct)
-        debug_output ("!!! localtime() returned non-zero");
-      else
-        if (0 == strftime (curr_time_date_str, (sizeof (TCHAR) * 255),
-                           TIME_DATE_FORMAT, time_struct))
-          {
-            debug_output ("!!! strftime() returned 0; maybe the buffer's not long enough?");
-            free (curr_time_date_str);
-
-            ctd_str_is_dynamic = FALSE;
-            curr_time_date_str = "siaynoq !!! try adjusting the buffer for the time/date";
-          }
-    }
-  else
-    {
-      debug_output ("!!! couldn't malloc() memory for current time/date display");
-      curr_time_date_str = "siaynoq !!! time/date string malloc() failed";
-    } /* if (ctd_str_is_dynamic) */
-
-  GetTextExtentPoint32 (time_date_dc, curr_time_date_str,
-                        (int) strlen (curr_time_date_str) + 1, &text_size);
-  coords_time_date.left = 0;
-  coords_time_date.top = 0;
-  coords_time_date.right = text_size.cx;
-  coords_time_date.bottom = coords_bar.bottom;
-
-  /* Draw actual tile layout indicator to buffer... */
-  FillRect (time_date_dc, &coords_time_date, brush_bg_label);
-  DrawText (time_date_dc, curr_time_date_str, -1, &coords_time_date,
-            DT_CENTER | DT_VCENTER | DT_NOCLIP | DT_NOPREFIX | DT_SINGLELINE);
-  /* ... do a bit of clean up ... */
-  if (ctd_str_is_dynamic)
-    free (curr_time_date_str);
-  /* ... and then we transfer it to the status bar */
-  BitBlt (buf_dc, (coords_bar.right - coords_time_date.right), 0,
-          coords_bar.right, coords_time_date.bottom,
-          time_date_dc, 0, 0, SRCCOPY);
-
-  /* Further clean up */
-  DeleteObject (old_time_date_font);
-  DeleteObject (time_date_bmp);
-  DeleteObject (old_time_date_bmp);
-  DeleteDC (time_date_dc);
+  coords_time_date = siaynoq_draw_component_time_date (buf_dc, coords_bar,
+                                                       font_handle);
   /* Done drawing time/date component */
 
 
   /* Draw the piece de resistance: the focused window's title */
-  handle_active_wnd = GetForegroundWindow ();
-
-  /* If we have a max'd window, but the cursor is on top of a visible
-     siaynoq component, make sure we used the max'd window's title,
-     instead. */
-  if ((handle_active_wnd == siaynoq_main_wnd_handle)
-      && (NULL != siaynoq_curr_maximized_wnd_handle))
-    handle_active_wnd = siaynoq_curr_maximized_wnd_handle;
-
-  title_dc = CreateCompatibleDC (NULL);
-  old_title_font = (HFONT) SelectObject (title_dc, font_handle);
-  SetBkMode (title_dc, TRANSPARENT);
-
-  title_bmp = CreateCompatibleBitmap (main_dc, coords_bar.right,
-                                      coords_bar.bottom);
-  old_title_bmp = (HBITMAP) SelectObject (title_dc, title_bmp);
-  SetTextColor (title_dc, COLOR_FG_NORM);
-
-  coords_title.left = 0;
-  coords_title.top = 0;
-  coords_title.right = coords_bar.right - coords_time_date.right - coords_layout.right;
-  coords_title.bottom = coords_bar.bottom;
-
-  /* Paint background color in anticipation */
-  FillRect (title_dc, &coords_title, brush_bg_norm);
-
-  /* In case there are no active windows, don't bother painting any
-     title */
-  len_active_wnd_title = GetWindowTextLength (handle_active_wnd);
-  if ((handle_active_wnd != siaynoq_main_wnd_handle)
-      && (0 != len_active_wnd_title))
-    {
-      len_active_wnd_title = sizeof (TCHAR) * (len_active_wnd_title + 1);
-      wnd_title_display = malloc (len_active_wnd_title);
-
-      if (NULL == wnd_title_display)
-        debug_output ("!!! couldn't malloc() memory for active window title");
-      else if (GetWindowText (handle_active_wnd, wnd_title_display,
-                              len_active_wnd_title))
-        {
-          coords_title.left = 3; /* totally arbitrary */
-          /* Paint the window title in! */
-          DrawText (title_dc, wnd_title_display, -1, &coords_title,
-                    DT_VCENTER | DT_END_ELLIPSIS | DT_NOPREFIX | DT_SINGLELINE);
-          if (_DEBUG)
-            {
-              debug_output ("^^^ currently focused");
-              debug_output (wnd_title_display);
-            }
-          free (wnd_title_display);
-        }
-    }
-  /* Transfer title to status bar */
-  BitBlt (buf_dc, coords_layout.right, 0, coords_title.right, coords_title.bottom,
-          title_dc, 0, 0, SRCCOPY);
-
-  /* Clean up */
-  DeleteObject (title_bmp);
-  DeleteObject (old_title_font);
-  DeleteObject (old_title_bmp);
-  DeleteDC (title_dc);
+  coords_title = coords_bar;
+  coords_title.left = coords_layout.right;
+  coords_title.right -= (coords_time_date.right + coords_layout.right);
+  coords_title = siaynoq_draw_component_wnd_title (buf_dc, coords_title,
+                                                   font_handle,
+                                                   siaynoq_main_wnd_handle,
+                                                   siaynoq_curr_maximized_wnd_handle);
   /* Done drawing focused window's title */
 
   /* Copy buf over to the main DC */
