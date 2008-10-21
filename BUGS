@@ -55,3 +55,5 @@ KNOWN BUGS						-*- text -*-
   let Alt-Tab go, and `CoolSwitch' is removed from the screen, it
   doesn't trigger a retiling (it doesn't look like Windows sends a
   HSHELL_WINDOWDESTROYED when that happens).
+
+- This hasn't been worked on IN OVER A YEAR!
